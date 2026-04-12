@@ -1,0 +1,33 @@
+name: teacher_hub_license_manager
+description: Internal license manager for Teacher Toolkit.
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.11.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cryptography: ^2.7.0
+  cupertino_icons: ^1.0.8
+  excel: ^4.0.6
+  file_picker: ^10.1.9
+  go_router: ^16.2.1
+  path: ^1.9.1
+  path_provider: ^2.1.5
+  sqflite: ^2.4.2
+  sqflite_common_ffi: ^2.3.7
+  sqlite3: ^2.9.4
+  teacher_toolkit_license_protocol:
+    path: ../teacher_toolkit_license_protocol
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
