@@ -315,7 +315,18 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('离线密钥已生成'),
+          title: Row(
+            children: <Widget>[
+              const Expanded(child: Text('离线密钥已生成')),
+              IconButton(
+                tooltip: '关闭',
+                onPressed: () {
+                  dialogContext.pop();
+                },
+                icon: const Icon(Icons.close),
+              ),
+            ],
+          ),
           content: SizedBox(
             width: 680,
             child: SingleChildScrollView(

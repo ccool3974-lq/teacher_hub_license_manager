@@ -109,4 +109,98 @@ void main() {
       expect(updated!.status, LicenseRecordStatus.revoked);
     },
   );
+
+  test('dashboard summary includes operation metrics', () async {
+    final DateTime now = DateTime.utc(2026, 4, 2, 12, 0);
+    final LicenseRecordRepository repository = const LicenseRecordRepository();
+    await repository.insert(
+      LicenseRecordEntity(
+        licenseId: 'LIC-2026-0001',
+        bindName: '张老师',
+        bindUserCode: 'T001',
+        durationDays: 30,
+        permanent: false,
+        issuedAt: now,
+        activationDeadline: now.add(const Duration(days: 3)),
+        operatorName: 'AdminA',
+        remark: null,
+        rawLicense: 'TTK3.payload.signature',
+        status: LicenseRecordStatus.active,
+        exportedAt: null,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+    await repository.insert(
+      LicenseRecordEntity(
+        licenseId: 'LIC-2026-0002',
+        bindName: '李老师',
+        bindUserCode: 'T002',
+        durationDays: 180,
+        permanent: false,
+        issuedAt: now,
+        activationDeadline: now.add(const Duration(days: 20)),
+        operatorName: 'AdminA',
+        remark: null,
+        rawLicense: 'TTK3.payload.signature',
+        status: LicenseRecordStatus.active,
+        exportedAt: now.add(const Duration(minutes: 5)),
+        createdAt: now.subtract(const Duration(days: 1)),
+        updatedAt: now,
+      ),
+    );
+    await repository.insert(
+      LicenseRecordEntity(
+        licenseId: 'LIC-2026-0003',
+        bindName: '王老师',
+        bindUserCode: 'T003',
+        durationDays: 30,
+        permanent: false,
+        issuedAt: now,
+        activationDeadline: now.add(const Duration(days: 2)),
+        operatorName: 'AdminB',
+        remark: null,
+        rawLicense: 'TTK3.payload.signature',
+        status: LicenseRecordStatus.revoked,
+        exportedAt: null,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+    await repository.insert(
+      LicenseRecordEntity(
+        licenseId: 'LIC-2026-0004',
+        bindName: '赵老师',
+        bindUserCode: 'T004',
+        durationDays: 0,
+        permanent: true,
+        issuedAt: now,
+        activationDeadline: now.subtract(const Duration(days: 1)),
+        operatorName: 'AdminB',
+        remark: null,
+        rawLicense: 'TTK3.payload.signature',
+        status: LicenseRecordStatus.active,
+        exportedAt: null,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+
+    final LicenseRecordService service = LicenseRecordService(
+      repository: repository,
+      now: () => now,
+    );
+
+    final LicenseDashboardSummary summary = await service.getDashboardSummary();
+
+    expect(summary.totalCount, 4);
+    expect(summary.activeCount, 3);
+    expect(summary.revokedCount, 1);
+    expect(summary.replacedCount, 0);
+    expect(summary.permanentCount, 1);
+    expect(summary.unexportedCount, 3);
+    expect(summary.activationDeadlineWarningCount, 1);
+    expect(summary.todayCreatedCount, 3);
+    expect(summary.recentRecords, hasLength(4));
+  });
 }

@@ -1,15 +1,11 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
-import 'package:path/path.dart' as p;
 import 'package:teacher_hub_license_manager/app/export_directory_settings_dialog.dart';
 import 'package:teacher_hub_license_manager/core/export/export_directory_service.dart';
 import 'package:teacher_hub_license_manager/modules/license_record/data/license_record_entity.dart';
 import 'package:teacher_hub_license_manager/modules/license_record/domain/license_export_service.dart';
-import 'package:teacher_hub_license_manager/modules/license_record/domain/license_import_service.dart';
 import 'package:teacher_hub_license_manager/modules/license_record/domain/license_record_service.dart';
+import 'package:teacher_hub_license_manager/modules/license_record/presentation/widgets/license_import_assistant_dialog.dart';
 import 'package:teacher_hub_license_manager/shared/chinese_date_time_formatter.dart';
 import 'package:teacher_hub_license_manager/shared/navigation/app_route_observer.dart';
 import 'package:teacher_hub_license_manager/shared/transient_snack_bar.dart';
@@ -66,28 +62,8 @@ class _LicenseListPageState extends State<LicenseListPage>
             itemBuilder: (BuildContext context) =>
                 const <PopupMenuEntry<String>>[
                   PopupMenuItem<String>(
-                    value: 'show_fields',
-                    child: Text('导入字段说明'),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'show_rules',
-                    child: Text('导入规则说明'),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'import_existing',
-                    child: Text('导入授权记录'),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'batch_generate',
-                    child: Text('批量生码导入'),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'download_existing_template',
-                    child: Text('下载授权记录模板'),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'download_batch_template',
-                    child: Text('下载批量生码模板'),
+                    value: 'assistant',
+                    child: Text('导入与模板助手'),
                   ),
                 ],
             icon: const Icon(Icons.playlist_add_check),
@@ -117,35 +93,7 @@ class _LicenseListPageState extends State<LicenseListPage>
       body: Column(
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: Column(
-              children: <Widget>[
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.info_outline),
-                    title: const Text('导入规则说明'),
-                    subtitle: const Text(
-                      '导入和导出统一使用 .xlsx，文件名允许扩写但必须包含系统下载模板名，单次最多 1000 条。',
-                    ),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: _showImportRulesDialog,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.menu_book_outlined),
-                    title: const Text('导入字段说明'),
-                    subtitle: const Text('查看授权记录导入和批量生码导入的字段含义、是否必填与填写要求。'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: _showImportFieldDialog,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -212,6 +160,12 @@ class _LicenseListPageState extends State<LicenseListPage>
                   },
                   icon: const Icon(Icons.add),
                   label: const Text('新增授权'),
+                ),
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  onPressed: _openImportAssistant,
+                  icon: const Icon(Icons.rule_folder_outlined),
+                  label: const Text('批量维护'),
                 ),
               ],
             ),
@@ -465,332 +419,23 @@ class _LicenseListPageState extends State<LicenseListPage>
 
   Future<void> _handleBatchAction(String action) async {
     switch (action) {
-      case 'show_fields':
-        await _showImportFieldDialog();
-        return;
-      case 'show_rules':
-        await _showImportRulesDialog();
-        return;
-      case 'import_existing':
-        await _importExistingRecords();
-        return;
-      case 'batch_generate':
-        await _batchGenerateFromFile();
-        return;
-      case 'download_existing_template':
-        await _downloadExistingTemplate();
-        return;
-      case 'download_batch_template':
-        await _downloadBatchTemplate();
+      case 'assistant':
+        await _openImportAssistant();
         return;
     }
   }
 
-  Future<void> _importExistingRecords() async {
-    final File? file = await _pickXlsxFile('选择授权记录导入文件');
-    if (file == null) {
-      return;
-    }
-    try {
-      _assertTemplateFileName(
-        file,
-        requiredBaseName:
-            LicenseImportService.existingRecordTemplateFileBaseName,
-      );
-      final LicenseImportResult result = await _service.importExistingRecords(
-        file,
-      );
-      if (!mounted) {
-        return;
-      }
-      _reload();
-      await _showImportResultDialog(title: '导入授权记录结果', result: result);
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      _showFailureSnackBar('导入授权记录失败：$error');
-    }
-  }
-
-  Future<void> _batchGenerateFromFile() async {
-    final File? file = await _pickXlsxFile('选择批量生码导入文件');
-    if (file == null) {
-      return;
-    }
-    try {
-      _assertTemplateFileName(
-        file,
-        requiredBaseName:
-            LicenseImportService.batchGenerateTemplateFileBaseName,
-      );
-      final LicenseImportResult result = await _service.batchGenerateFromFile(
-        file,
-      );
-      if (!mounted) {
-        return;
-      }
-      _reload();
-      await _showImportResultDialog(title: '批量生码结果', result: result);
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      _showFailureSnackBar('批量生码导入失败：$error');
-    }
-  }
-
-  Future<void> _downloadBatchTemplate() async {
-    try {
-      final file = await _service.exportBatchGenerateTemplate();
-      if (!mounted) {
-        return;
-      }
-      showTransientSnackBar(
-        context,
-        SnackBar(
-          content: Text('模板已导出到：${file.path}'),
-          duration: const Duration(seconds: 5),
-          action: SnackBarAction(
-            label: '打开目录',
-            onPressed: () {
-              _exportService.openExportDirectory();
-            },
-          ),
-        ),
-      );
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      _showFailureSnackBar('导出模板失败：$error');
-    }
-  }
-
-  Future<void> _downloadExistingTemplate() async {
-    try {
-      final file = await _service.exportExistingRecordTemplate();
-      if (!mounted) {
-        return;
-      }
-      showTransientSnackBar(
-        context,
-        SnackBar(
-          content: Text('模板已导出到：${file.path}'),
-          duration: const Duration(seconds: 5),
-          action: SnackBarAction(
-            label: '打开目录',
-            onPressed: () {
-              _exportService.openExportDirectory();
-            },
-          ),
-        ),
-      );
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      _showFailureSnackBar('导出模板失败：$error');
-    }
-  }
-
-  Future<File?> _pickXlsxFile(String dialogTitle) async {
-    final FilePickerResult? result = await FilePicker.platform.pickFiles(
-      dialogTitle: dialogTitle,
-      type: FileType.custom,
-      allowedExtensions: const <String>['xlsx'],
-      withData: false,
-      lockParentWindow: true,
-    );
-    final String? path = result?.files.single.path;
-    if (path == null || path.isEmpty) {
-      return null;
-    }
-    return File(path);
-  }
-
-  Future<void> _showImportResultDialog({
-    required String title,
-    required LicenseImportResult result,
-  }) {
+  Future<void> _openImportAssistant() async {
     return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(title),
-          content: SizedBox(
-            width: 520,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text('总条数：${result.totalRows}'),
-                Text('成功：${result.successCount}'),
-                Text('失败：${result.failureCount}'),
-                if (result.failures.isNotEmpty) ...<Widget>[
-                  const SizedBox(height: 12),
-                  const Text('错误明细：'),
-                  const SizedBox(height: 8),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 220),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: result.failures
-                            .map(
-                              (String failure) => Padding(
-                                padding: const EdgeInsets.only(bottom: 6),
-                                child: Text('• $failure'),
-                              ),
-                            )
-                            .toList(growable: false),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('关闭'),
-            ),
-          ],
+        return LicenseImportAssistantDialog(
+          service: _service,
+          exportService: _exportService,
+          onChanged: _reload,
         );
       },
     );
-  }
-
-  Future<void> _showImportRulesDialog() {
-    return showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('导入规则说明'),
-          content: const SizedBox(
-            width: 560,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text('通用规则'),
-                  SizedBox(height: 8),
-                  Text('1. 所有导入模板统一使用 .xlsx。'),
-                  Text('2. 所有导出文件统一使用 .xlsx。'),
-                  Text('3. 操作标记固定在最后一列。'),
-                  Text('4. 导出时操作标记默认写为 I。'),
-                  Text('5. 单次导入最多 1000 条。'),
-                  Text('6. 导入失败原因会完整展示。'),
-                  Text('7. 导入列数不能多于模板字段个数。'),
-                  Text('8. 文件名允许扩写，但必须包含系统下载模板名。'),
-                  SizedBox(height: 12),
-                  Text('授权记录导入规则'),
-                  SizedBox(height: 8),
-                  Text('1. 使用“下载授权记录模板”生成的标准模板。'),
-                  Text('2. 文件名必须包含 license_record_import_template。'),
-                  Text('3. I：授权编号必须不存在。'),
-                  Text('4. U：授权编号必须已存在。'),
-                  Text('5. D：授权编号必须已存在。'),
-                  SizedBox(height: 12),
-                  Text('批量生码导入规则'),
-                  SizedBox(height: 8),
-                  Text('1. 使用“下载批量生码模板”生成的标准模板。'),
-                  Text('2. 文件名必须包含 license_batch_generate_template。'),
-                  Text('3. 当前批量生码导入仅支持操作标记 I。'),
-                  Text('4. 系统会自动生成新的授权编号和授权码。'),
-                  SizedBox(height: 12),
-                  Text('操作标记规则'),
-                  SizedBox(height: 8),
-                  Text('1. 只允许 I / U / D。'),
-                  Text('2. I：目标记录必须不存在。'),
-                  Text('3. U：目标记录必须已存在。'),
-                  Text('4. D：目标记录必须已存在。'),
-                ],
-              ),
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('关闭'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _showImportFieldDialog() {
-    return showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('导入字段说明'),
-          content: const SizedBox(
-            width: 620,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text('授权记录导入字段'),
-                  SizedBox(height: 8),
-                  Text('1. 授权编号：必填，业务唯一键，用于 I/U/D 判断目标记录。'),
-                  Text('2. 绑定用户：必填，客户端显示的绑定名称。'),
-                  Text('3. 用户编号：选填，用于内部标识用户或机构编号。'),
-                  Text('4. 有效期：必填，填写“永久”或天数。'),
-                  Text('5. 首次激活截止：必填，使用可被系统解析的日期时间。'),
-                  Text('6. 状态：必填，只允许有效 / 已作废 / 已替代。'),
-                  Text('7. 发码时间：必填，使用可被系统解析的日期时间。'),
-                  Text('8. 创建时间：必填，表示记录创建时间。'),
-                  Text('9. 更新时间：必填，表示记录最后更新时间。'),
-                  Text('10. 操作人：选填，记录生成或维护人。'),
-                  Text('11. 备注：选填，补充说明。'),
-                  Text('12. 授权码：必填，导入已有授权记录时必须保留原始授权码。'),
-                  Text('13. 操作标记：必填，只允许 I / U / D。'),
-                  SizedBox(height: 12),
-                  Text('批量生码导入字段'),
-                  SizedBox(height: 8),
-                  Text('1. 绑定用户：必填，用于生成授权记录时的绑定名称。'),
-                  Text('2. 用户编号：选填，用于内部识别。'),
-                  Text('3. 有效期天数：永久授权为“否”时必填，且必须大于 0。'),
-                  Text('4. 永久授权：必填，填写 是 / 否 或兼容 true / false。'),
-                  Text('5. 首次激活截止日期：选填，留空时默认取发码时间后 30 天。'),
-                  Text('6. 操作人：选填，记录批量生成责任人。'),
-                  Text('7. 备注：选填，补充说明。'),
-                  Text('8. 操作标记：必填，当前批量生码导入仅支持 I。'),
-                ],
-              ),
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('关闭'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showFailureSnackBar(String message) {
-    showTransientSnackBar(
-      context,
-      SnackBar(content: Text(message), duration: const Duration(seconds: 5)),
-    );
-  }
-
-  void _assertTemplateFileName(File file, {required String requiredBaseName}) {
-    final String baseName = p
-        .basenameWithoutExtension(file.path)
-        .trim()
-        .toLowerCase();
-    if (!baseName.contains(requiredBaseName.toLowerCase())) {
-      throw StateError('导入文件名必须包含模板名“$requiredBaseName”，请基于最新下载模板填写后再导入。');
-    }
   }
 
   String _statusLabel(LicenseRecordStatus status) {

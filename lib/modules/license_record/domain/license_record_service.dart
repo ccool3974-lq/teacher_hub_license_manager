@@ -13,6 +13,9 @@ class LicenseDashboardSummary {
     required this.revokedCount,
     required this.replacedCount,
     required this.permanentCount,
+    required this.unexportedCount,
+    required this.activationDeadlineWarningCount,
+    required this.todayCreatedCount,
     required this.recentRecords,
   });
 
@@ -21,6 +24,9 @@ class LicenseDashboardSummary {
   final int revokedCount;
   final int replacedCount;
   final int permanentCount;
+  final int unexportedCount;
+  final int activationDeadlineWarningCount;
+  final int todayCreatedCount;
   final List<LicenseRecordEntity> recentRecords;
 }
 
@@ -89,6 +95,14 @@ class LicenseRecordService {
     int recentLimit = 6,
   }) async {
     final List<LicenseRecordEntity> records = await _repository.listAll();
+    final DateTime currentTime = _now().toUtc();
+    final DateTime warningDeadline = currentTime.add(const Duration(days: 7));
+    final DateTime todayStart = DateTime.utc(
+      currentTime.year,
+      currentTime.month,
+      currentTime.day,
+    );
+    final DateTime tomorrowStart = todayStart.add(const Duration(days: 1));
     return LicenseDashboardSummary(
       totalCount: records.length,
       activeCount: records
@@ -111,6 +125,24 @@ class LicenseRecordService {
           .length,
       permanentCount: records
           .where((LicenseRecordEntity record) => record.permanent)
+          .length,
+      unexportedCount: records
+          .where((LicenseRecordEntity record) => record.exportedAt == null)
+          .length,
+      activationDeadlineWarningCount: records
+          .where(
+            (LicenseRecordEntity record) =>
+                record.status == LicenseRecordStatus.active &&
+                !record.activationDeadline.isBefore(currentTime) &&
+                !record.activationDeadline.isAfter(warningDeadline),
+          )
+          .length,
+      todayCreatedCount: records
+          .where(
+            (LicenseRecordEntity record) =>
+                !record.createdAt.isBefore(todayStart) &&
+                record.createdAt.isBefore(tomorrowStart),
+          )
           .length,
       recentRecords: records.take(recentLimit).toList(growable: false),
     );
