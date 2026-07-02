@@ -1,5 +1,3 @@
-import 'package:teacher_toolkit_license_protocol/teacher_toolkit_license_protocol.dart';
-
 enum LicenseRecordStatus {
   active('active'),
   revoked('revoked'),
@@ -23,8 +21,7 @@ class LicenseRecordEntity {
     required this.licenseId,
     required this.bindName,
     this.bindUserCode,
-    required this.tier,
-    this.durationDays,
+    required this.durationDays,
     required this.permanent,
     required this.issuedAt,
     required this.activationDeadline,
@@ -41,8 +38,7 @@ class LicenseRecordEntity {
   final String licenseId;
   final String bindName;
   final String? bindUserCode;
-  final LicenseTier tier;
-  final int? durationDays;
+  final int durationDays;
   final bool permanent;
   final DateTime issuedAt;
   final DateTime activationDeadline;
@@ -59,7 +55,6 @@ class LicenseRecordEntity {
     String? licenseId,
     String? bindName,
     String? bindUserCode,
-    LicenseTier? tier,
     int? durationDays,
     bool? permanent,
     DateTime? issuedAt,
@@ -80,15 +75,16 @@ class LicenseRecordEntity {
       id: id ?? this.id,
       licenseId: licenseId ?? this.licenseId,
       bindName: bindName ?? this.bindName,
-      bindUserCode:
-          clearBindUserCode ? null : (bindUserCode ?? this.bindUserCode),
-      tier: tier ?? this.tier,
+      bindUserCode: clearBindUserCode
+          ? null
+          : (bindUserCode ?? this.bindUserCode),
       durationDays: durationDays ?? this.durationDays,
       permanent: permanent ?? this.permanent,
       issuedAt: issuedAt ?? this.issuedAt,
       activationDeadline: activationDeadline ?? this.activationDeadline,
-      operatorName:
-          clearOperatorName ? null : (operatorName ?? this.operatorName),
+      operatorName: clearOperatorName
+          ? null
+          : (operatorName ?? this.operatorName),
       remark: clearRemark ? null : (remark ?? this.remark),
       rawLicense: rawLicense ?? this.rawLicense,
       status: status ?? this.status,
@@ -104,7 +100,6 @@ class LicenseRecordEntity {
       'licenseId': licenseId,
       'bindName': bindName,
       'bindUserCode': bindUserCode,
-      'tier': tier.storageValue,
       'durationDays': durationDays,
       'permanent': permanent ? 1 : 0,
       'issuedAt': issuedAt.toIso8601String(),
@@ -125,14 +120,13 @@ class LicenseRecordEntity {
       licenseId: map['licenseId'] as String,
       bindName: map['bindName'] as String,
       bindUserCode: map['bindUserCode'] as String?,
-      tier: LicenseTier.fromStorageValue(map['tier'] as String),
-      durationDays: map['durationDays'] as int?,
+      durationDays: map['durationDays'] as int,
       permanent: (map['permanent'] as int) == 1,
       issuedAt: DateTime.parse(map['issuedAt'] as String),
       activationDeadline: map['activationDeadline'] == null
-          ? DateTime.parse(map['issuedAt'] as String)
-              .toUtc()
-              .add(const Duration(days: 30))
+          ? DateTime.parse(
+              map['issuedAt'] as String,
+            ).toUtc().add(const Duration(days: 30))
           : DateTime.parse(map['activationDeadline'] as String),
       operatorName: map['operatorName'] as String?,
       remark: map['remark'] as String?,

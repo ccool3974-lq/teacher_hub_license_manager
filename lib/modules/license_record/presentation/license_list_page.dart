@@ -13,11 +13,10 @@ import 'package:teacher_hub_license_manager/modules/license_record/domain/licens
 import 'package:teacher_hub_license_manager/shared/chinese_date_time_formatter.dart';
 import 'package:teacher_hub_license_manager/shared/navigation/app_route_observer.dart';
 import 'package:teacher_hub_license_manager/shared/transient_snack_bar.dart';
-import 'package:teacher_toolkit_license_protocol/teacher_toolkit_license_protocol.dart';
 
 class LicenseListPage extends StatefulWidget {
   const LicenseListPage({super.key, LicenseRecordService? service})
-      : _service = service;
+    : _service = service;
 
   final LicenseRecordService? _service;
 
@@ -30,7 +29,8 @@ class _LicenseListPageState extends State<LicenseListPage>
   late final LicenseRecordService _service =
       widget._service ?? LicenseRecordService();
   final LicenseExportService _exportService = LicenseExportService();
-  final ExportDirectoryService _exportDirectoryService = ExportDirectoryService();
+  final ExportDirectoryService _exportDirectoryService =
+      ExportDirectoryService();
   final TextEditingController _searchController = TextEditingController();
 
   Future<List<LicenseRecordEntity>>? _recordsFuture;
@@ -63,32 +63,33 @@ class _LicenseListPageState extends State<LicenseListPage>
           PopupMenuButton<String>(
             tooltip: '批量操作',
             onSelected: _handleBatchAction,
-            itemBuilder: (BuildContext context) => const <PopupMenuEntry<String>>[
-              PopupMenuItem<String>(
-                value: 'show_fields',
-                child: Text('导入字段说明'),
-              ),
-              PopupMenuItem<String>(
-                value: 'show_rules',
-                child: Text('导入规则说明'),
-              ),
-              PopupMenuItem<String>(
-                value: 'import_existing',
-                child: Text('导入授权记录'),
-              ),
-              PopupMenuItem<String>(
-                value: 'batch_generate',
-                child: Text('批量生码导入'),
-              ),
-              PopupMenuItem<String>(
-                value: 'download_existing_template',
-                child: Text('下载授权记录模板'),
-              ),
-              PopupMenuItem<String>(
-                value: 'download_batch_template',
-                child: Text('下载批量生码模板'),
-              ),
-            ],
+            itemBuilder: (BuildContext context) =>
+                const <PopupMenuEntry<String>>[
+                  PopupMenuItem<String>(
+                    value: 'show_fields',
+                    child: Text('导入字段说明'),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'show_rules',
+                    child: Text('导入规则说明'),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'import_existing',
+                    child: Text('导入授权记录'),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'batch_generate',
+                    child: Text('批量生码导入'),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'download_existing_template',
+                    child: Text('下载授权记录模板'),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'download_batch_template',
+                    child: Text('下载批量生码模板'),
+                  ),
+                ],
             icon: const Icon(Icons.playlist_add_check),
           ),
           IconButton(
@@ -219,137 +220,148 @@ class _LicenseListPageState extends State<LicenseListPage>
           Expanded(
             child: FutureBuilder<List<LicenseRecordEntity>>(
               future: _recordsFuture,
-              builder: (
-                BuildContext context,
-                AsyncSnapshot<List<LicenseRecordEntity>> snapshot,
-              ) {
-                if (snapshot.connectionState != ConnectionState.done) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+              builder:
+                  (
+                    BuildContext context,
+                    AsyncSnapshot<List<LicenseRecordEntity>> snapshot,
+                  ) {
+                    if (snapshot.connectionState != ConnectionState.done) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text('加载授权记录失败：${snapshot.error}'),
-                    ),
-                  );
-                }
-
-                final List<LicenseRecordEntity> records =
-                    _filter(snapshot.data ?? const <LicenseRecordEntity>[]);
-                if (records.isEmpty) {
-                  return Center(
-                    child: Text(
-                      _query.isEmpty && _selectedStatus == null
-                          ? '暂无授权记录。'
-                          : '没有匹配的授权记录。',
-                    ),
-                  );
-                }
-
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  itemCount: records.length,
-                  separatorBuilder: (BuildContext context, int index) =>
-                      const SizedBox(height: 12),
-                  itemBuilder: (BuildContext context, int index) {
-                    final LicenseRecordEntity record = records[index];
-                    return Card(
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () async {
-                          await context.push('/records/${record.licenseId}');
-                          if (!mounted) {
-                            return;
-                          }
-                          _reload();
-                        },
+                    if (snapshot.hasError) {
+                      return Center(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    Text(
-                                      record.bindName,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      '${_tierLabel(record.tier)} · ${record.licenseId}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyLarge,
-                                    ),
-                                    if (record.operatorName case final String operatorName
-                                        when operatorName.trim().isNotEmpty) ...<Widget>[
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '操作人：$operatorName',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium,
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              ConstrainedBox(
-                                constraints: const BoxConstraints(minWidth: 116),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: <Widget>[
-                                    Text(
-                                      _statusLabel(record.status),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleSmall
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      record.permanent
-                                          ? '永久'
-                                          : '${record.durationDays} 天',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyLarge,
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      '激活截止 ${ChineseDateTimeFormatter.formatDateTime(record.activationDeadline)}',
-                                      textAlign: TextAlign.right,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                          padding: const EdgeInsets.all(24),
+                          child: Text('加载授权记录失败：${snapshot.error}'),
                         ),
-                      ),
+                      );
+                    }
+
+                    final List<LicenseRecordEntity> records = _filter(
+                      snapshot.data ?? const <LicenseRecordEntity>[],
+                    );
+                    if (records.isEmpty) {
+                      return Center(
+                        child: Text(
+                          _query.isEmpty && _selectedStatus == null
+                              ? '暂无授权记录。'
+                              : '没有匹配的授权记录。',
+                        ),
+                      );
+                    }
+
+                    return ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      itemCount: records.length,
+                      separatorBuilder: (BuildContext context, int index) =>
+                          const SizedBox(height: 12),
+                      itemBuilder: (BuildContext context, int index) {
+                        final LicenseRecordEntity record = records[index];
+                        return Card(
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () async {
+                              await context.push(
+                                '/records/${record.licenseId}',
+                              );
+                              if (!mounted) {
+                                return;
+                              }
+                              _reload();
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        Text(
+                                          record.bindName,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          '离线密钥 · ${record.licenseId}',
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodyLarge,
+                                        ),
+                                        if (record.operatorName
+                                            case final String operatorName
+                                            when operatorName
+                                                .trim()
+                                                .isNotEmpty) ...<Widget>[
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '操作人：$operatorName',
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodyMedium,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      minWidth: 116,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: <Widget>[
+                                        Text(
+                                          _statusLabel(record.status),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleSmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          record.permanent
+                                              ? '永久'
+                                              : '${record.durationDays} 天',
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodyLarge,
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          '激活截止 ${ChineseDateTimeFormatter.formatDateTime(record.activationDeadline)}',
+                                          textAlign: TextAlign.right,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
-                );
-              },
             ),
           ),
         ],
@@ -364,22 +376,24 @@ class _LicenseListPageState extends State<LicenseListPage>
   }
 
   List<LicenseRecordEntity> _filter(List<LicenseRecordEntity> records) {
-    return records.where((LicenseRecordEntity record) {
-      if (_selectedStatus != null && record.status != _selectedStatus) {
-        return false;
-      }
-      if (_query.isEmpty) {
-        return true;
-      }
+    return records
+        .where((LicenseRecordEntity record) {
+          if (_selectedStatus != null && record.status != _selectedStatus) {
+            return false;
+          }
+          if (_query.isEmpty) {
+            return true;
+          }
 
-      final String haystack = <String?>[
-        record.bindName,
-        record.licenseId,
-        record.operatorName,
-        record.bindUserCode,
-      ].whereType<String>().join(' ').toLowerCase();
-      return haystack.contains(_query);
-    }).toList(growable: false);
+          final String haystack = <String?>[
+            record.bindName,
+            record.licenseId,
+            record.operatorName,
+            record.bindUserCode,
+          ].whereType<String>().join(' ').toLowerCase();
+          return haystack.contains(_query);
+        })
+        .toList(growable: false);
   }
 
   Future<void> _openExportSettings() async {
@@ -424,15 +438,15 @@ class _LicenseListPageState extends State<LicenseListPage>
       showTransientSnackBar(
         context,
         SnackBar(
-            content: Text('导出完成，共 ${allRecords.length} 条，文件位置：${file.path}'),
-            duration: const Duration(seconds: 5),
-            action: SnackBarAction(
-              label: '打开目录',
-              onPressed: () {
-                _exportService.openExportDirectory();
-              },
-            ),
+          content: Text('导出完成，共 ${allRecords.length} 条，文件位置：${file.path}'),
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: '打开目录',
+            onPressed: () {
+              _exportService.openExportDirectory();
+            },
           ),
+        ),
       );
       _reload();
     } catch (error) {
@@ -480,17 +494,17 @@ class _LicenseListPageState extends State<LicenseListPage>
     try {
       _assertTemplateFileName(
         file,
-        requiredBaseName: LicenseImportService.existingRecordTemplateFileBaseName,
+        requiredBaseName:
+            LicenseImportService.existingRecordTemplateFileBaseName,
       );
-      final LicenseImportResult result = await _service.importExistingRecords(file);
+      final LicenseImportResult result = await _service.importExistingRecords(
+        file,
+      );
       if (!mounted) {
         return;
       }
       _reload();
-      await _showImportResultDialog(
-        title: '导入授权记录结果',
-        result: result,
-      );
+      await _showImportResultDialog(title: '导入授权记录结果', result: result);
     } catch (error) {
       if (!mounted) {
         return;
@@ -507,17 +521,17 @@ class _LicenseListPageState extends State<LicenseListPage>
     try {
       _assertTemplateFileName(
         file,
-        requiredBaseName: LicenseImportService.batchGenerateTemplateFileBaseName,
+        requiredBaseName:
+            LicenseImportService.batchGenerateTemplateFileBaseName,
       );
-      final LicenseImportResult result = await _service.batchGenerateFromFile(file);
+      final LicenseImportResult result = await _service.batchGenerateFromFile(
+        file,
+      );
       if (!mounted) {
         return;
       }
       _reload();
-      await _showImportResultDialog(
-        title: '批量生码结果',
-        result: result,
-      );
+      await _showImportResultDialog(title: '批量生码结果', result: result);
     } catch (error) {
       if (!mounted) {
         return;
@@ -535,15 +549,15 @@ class _LicenseListPageState extends State<LicenseListPage>
       showTransientSnackBar(
         context,
         SnackBar(
-            content: Text('模板已导出到：${file.path}'),
-            duration: const Duration(seconds: 5),
-            action: SnackBarAction(
-              label: '打开目录',
-              onPressed: () {
-                _exportService.openExportDirectory();
-              },
-            ),
+          content: Text('模板已导出到：${file.path}'),
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: '打开目录',
+            onPressed: () {
+              _exportService.openExportDirectory();
+            },
           ),
+        ),
       );
     } catch (error) {
       if (!mounted) {
@@ -562,15 +576,15 @@ class _LicenseListPageState extends State<LicenseListPage>
       showTransientSnackBar(
         context,
         SnackBar(
-            content: Text('模板已导出到：${file.path}'),
-            duration: const Duration(seconds: 5),
-            action: SnackBarAction(
-              label: '打开目录',
-              onPressed: () {
-                _exportService.openExportDirectory();
-              },
-            ),
+          content: Text('模板已导出到：${file.path}'),
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: '打开目录',
+            onPressed: () {
+              _exportService.openExportDirectory();
+            },
           ),
+        ),
       );
     } catch (error) {
       if (!mounted) {
@@ -623,10 +637,12 @@ class _LicenseListPageState extends State<LicenseListPage>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: result.failures
-                            .map((String failure) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 6),
-                                  child: Text('• $failure'),
-                                ))
+                            .map(
+                              (String failure) => Padding(
+                                padding: const EdgeInsets.only(bottom: 6),
+                                child: Text('• $failure'),
+                              ),
+                            )
                             .toList(growable: false),
                       ),
                     ),
@@ -724,29 +740,27 @@ class _LicenseListPageState extends State<LicenseListPage>
                   Text('1. 授权编号：必填，业务唯一键，用于 I/U/D 判断目标记录。'),
                   Text('2. 绑定用户：必填，客户端显示的绑定名称。'),
                   Text('3. 用户编号：选填，用于内部标识用户或机构编号。'),
-                  Text('4. 授权版本：必填，只允许免费版 / 基础版 / 高级版。'),
-                  Text('5. 有效期：必填，填写“永久”或天数。'),
-                  Text('6. 首次激活截止：选填，旧模板可不填；新模板建议填写可被系统解析的日期时间。'),
-                  Text('7. 状态：必填，只允许有效 / 已作废 / 已替代。'),
-                  Text('8. 发码时间：必填，使用可被系统解析的日期时间。'),
-                  Text('9. 创建时间：必填，表示记录创建时间。'),
-                  Text('10. 更新时间：必填，表示记录最后更新时间。'),
-                  Text('11. 操作人：选填，记录生成或维护人。'),
-                  Text('12. 备注：选填，补充说明。'),
-                  Text('13. 授权码：必填，导入已有授权记录时必须保留原始授权码。'),
-                  Text('14. 操作标记：必填，只允许 I / U / D。'),
+                  Text('4. 有效期：必填，填写“永久”或天数。'),
+                  Text('5. 首次激活截止：必填，使用可被系统解析的日期时间。'),
+                  Text('6. 状态：必填，只允许有效 / 已作废 / 已替代。'),
+                  Text('7. 发码时间：必填，使用可被系统解析的日期时间。'),
+                  Text('8. 创建时间：必填，表示记录创建时间。'),
+                  Text('9. 更新时间：必填，表示记录最后更新时间。'),
+                  Text('10. 操作人：选填，记录生成或维护人。'),
+                  Text('11. 备注：选填，补充说明。'),
+                  Text('12. 授权码：必填，导入已有授权记录时必须保留原始授权码。'),
+                  Text('13. 操作标记：必填，只允许 I / U / D。'),
                   SizedBox(height: 12),
                   Text('批量生码导入字段'),
                   SizedBox(height: 8),
                   Text('1. 绑定用户：必填，用于生成授权记录时的绑定名称。'),
                   Text('2. 用户编号：选填，用于内部识别。'),
-                  Text('3. 授权版本：必填，只允许免费版 / 基础版 / 高级版。'),
-                  Text('4. 有效期天数：永久授权为“否”时必填，且必须大于 0。'),
-                  Text('5. 永久授权：必填，填写 是 / 否 或兼容 true / false。'),
-                  Text('6. 首次激活截止日期：选填，留空时默认取发码时间后 30 天。'),
-                  Text('7. 操作人：选填，记录批量生成责任人。'),
-                  Text('8. 备注：选填，补充说明。'),
-                  Text('9. 操作标记：必填，当前批量生码导入仅支持 I。'),
+                  Text('3. 有效期天数：永久授权为“否”时必填，且必须大于 0。'),
+                  Text('4. 永久授权：必填，填写 是 / 否 或兼容 true / false。'),
+                  Text('5. 首次激活截止日期：选填，留空时默认取发码时间后 30 天。'),
+                  Text('6. 操作人：选填，记录批量生成责任人。'),
+                  Text('7. 备注：选填，补充说明。'),
+                  Text('8. 操作标记：必填，当前批量生码导入仅支持 I。'),
                 ],
               ),
             ),
@@ -765,27 +779,18 @@ class _LicenseListPageState extends State<LicenseListPage>
   void _showFailureSnackBar(String message) {
     showTransientSnackBar(
       context,
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 5),
-      ),
+      SnackBar(content: Text(message), duration: const Duration(seconds: 5)),
     );
   }
 
   void _assertTemplateFileName(File file, {required String requiredBaseName}) {
-    final String baseName =
-        p.basenameWithoutExtension(file.path).trim().toLowerCase();
+    final String baseName = p
+        .basenameWithoutExtension(file.path)
+        .trim()
+        .toLowerCase();
     if (!baseName.contains(requiredBaseName.toLowerCase())) {
       throw StateError('导入文件名必须包含模板名“$requiredBaseName”，请基于最新下载模板填写后再导入。');
     }
-  }
-
-  String _tierLabel(LicenseTier tier) {
-    return switch (tier) {
-      LicenseTier.free => '免费版',
-      LicenseTier.basic => '基础版',
-      LicenseTier.premium => '高级版',
-    };
   }
 
   String _statusLabel(LicenseRecordStatus status) {

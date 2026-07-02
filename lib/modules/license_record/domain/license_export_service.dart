@@ -6,7 +6,6 @@ import 'package:teacher_hub_license_manager/core/export/export_service.dart';
 import 'package:teacher_hub_license_manager/modules/license_record/data/license_record_entity.dart';
 import 'package:teacher_hub_license_manager/modules/license_record/data/license_record_repository.dart';
 import 'package:teacher_hub_license_manager/modules/license_record/domain/license_import_service.dart';
-import 'package:teacher_toolkit_license_protocol/teacher_toolkit_license_protocol.dart';
 
 class LicenseExportService {
   LicenseExportService({
@@ -14,12 +13,13 @@ class LicenseExportService {
     ExportDirectoryService? exportDirectoryService,
     LicenseRecordRepository? repository,
     DateTime Function()? now,
-  })  : _exportService = exportService ??
-            ExportService(exportDirectoryService: exportDirectoryService),
-        _exportDirectoryService =
-            exportDirectoryService ?? ExportDirectoryService(),
-        _repository = repository ?? const LicenseRecordRepository(),
-        _now = now ?? DateTime.now;
+  }) : _exportService =
+           exportService ??
+           ExportService(exportDirectoryService: exportDirectoryService),
+       _exportDirectoryService =
+           exportDirectoryService ?? ExportDirectoryService(),
+       _repository = repository ?? const LicenseRecordRepository(),
+       _now = now ?? DateTime.now;
 
   final ExportService _exportService;
   final ExportDirectoryService _exportDirectoryService;
@@ -54,7 +54,6 @@ class LicenseExportService {
       '授权编号',
       '绑定用户',
       '用户编号',
-      '授权版本',
       '有效期',
       '首次激活截止',
       '状态',
@@ -73,7 +72,6 @@ class LicenseExportService {
         TextCellValue(record.licenseId),
         TextCellValue(record.bindName),
         TextCellValue(record.bindUserCode ?? ''),
-        TextCellValue(_tierLabel(record.tier)),
         TextCellValue(record.permanent ? '永久' : '${record.durationDays} 天'),
         TextCellValue(record.activationDeadline.toIso8601String()),
         TextCellValue(_statusLabel(record.status)),
@@ -119,14 +117,11 @@ class LicenseExportService {
     final Sheet sheet = workbook[sheetName];
 
     sheet.appendRow(
-      LicenseImportService.batchGenerateHeaders
-          .map(TextCellValue.new)
-          .toList(),
+      LicenseImportService.batchGenerateHeaders.map(TextCellValue.new).toList(),
     );
     sheet.appendRow(<CellValue>[
       TextCellValue('张老师'),
       TextCellValue('T001'),
-      TextCellValue('基础版'),
       TextCellValue('30'),
       TextCellValue('否'),
       TextCellValue(DateTime.utc(2026, 5, 6, 23, 59, 59).toIso8601String()),
@@ -162,7 +157,6 @@ class LicenseExportService {
       TextCellValue('LIC-202604060001-ABCD'),
       TextCellValue('张老师'),
       TextCellValue('T001'),
-      TextCellValue('基础版'),
       TextCellValue('30 天'),
       TextCellValue(DateTime.utc(2026, 5, 6, 23, 59, 59).toIso8601String()),
       TextCellValue('有效'),
@@ -171,7 +165,7 @@ class LicenseExportService {
       TextCellValue(DateTime.utc(2026, 4, 6, 10, 0).toIso8601String()),
       TextCellValue('AdminA'),
       TextCellValue('示例数据'),
-      TextCellValue('TTK2.payload.signature'),
+      TextCellValue('TTK3.payload.signature'),
       TextCellValue('I'),
     ]);
 
@@ -196,7 +190,6 @@ class LicenseExportService {
       ..writeln('授权编号: ${record.licenseId}')
       ..writeln('绑定用户: ${record.bindName}')
       ..writeln('用户编号: ${record.bindUserCode ?? ''}')
-      ..writeln('授权版本: ${_tierLabel(record.tier)}')
       ..writeln('有效期: ${record.permanent ? '永久' : '${record.durationDays} 天'}')
       ..writeln('首次激活截止: ${record.activationDeadline.toIso8601String()}')
       ..writeln('状态: ${_statusLabel(record.status)}')
@@ -218,14 +211,6 @@ class LicenseExportService {
         '${value.hour.toString().padLeft(2, '0')}'
         '${value.minute.toString().padLeft(2, '0')}'
         '${value.second.toString().padLeft(2, '0')}';
-  }
-
-  String _tierLabel(LicenseTier tier) {
-    return switch (tier) {
-      LicenseTier.free => '免费版',
-      LicenseTier.basic => '基础版',
-      LicenseTier.premium => '高级版',
-    };
   }
 
   String _statusLabel(LicenseRecordStatus status) {

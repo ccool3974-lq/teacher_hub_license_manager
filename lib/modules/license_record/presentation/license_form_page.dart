@@ -4,11 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:teacher_hub_license_manager/modules/license_record/data/license_record_entity.dart';
 import 'package:teacher_hub_license_manager/modules/license_record/domain/license_record_service.dart';
 import 'package:teacher_hub_license_manager/shared/chinese_date_time_formatter.dart';
-import 'package:teacher_toolkit_license_protocol/teacher_toolkit_license_protocol.dart';
 
 class LicenseFormPage extends StatefulWidget {
   const LicenseFormPage({super.key, LicenseRecordService? service})
-      : _service = service;
+    : _service = service;
 
   final LicenseRecordService? _service;
 
@@ -27,10 +26,10 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
   final TextEditingController _bindUserCodeController = TextEditingController();
   final TextEditingController _operatorNameController = TextEditingController();
   final TextEditingController _remarkController = TextEditingController();
-  final TextEditingController _durationDaysController =
-      TextEditingController(text: '30');
+  final TextEditingController _durationDaysController = TextEditingController(
+    text: '30',
+  );
 
-  LicenseTier _selectedTier = LicenseTier.basic;
   int? _selectedPresetDurationDays = 30;
   late DateTime _activationDeadlineDate = _defaultActivationDeadlineDate();
   bool _permanent = false;
@@ -50,7 +49,7 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('新建授权'),
+        title: const Text('新建离线密钥'),
         actions: <Widget>[
           IconButton(
             tooltip: '授权总览',
@@ -96,32 +95,6 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
               ),
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<LicenseTier>(
-              initialValue: _selectedTier,
-              decoration: const InputDecoration(
-                labelText: '授权版本',
-                border: OutlineInputBorder(),
-              ),
-              items: const <DropdownMenuItem<LicenseTier>>[
-                DropdownMenuItem<LicenseTier>(
-                  value: LicenseTier.basic,
-                  child: Text('基础版'),
-                ),
-                DropdownMenuItem<LicenseTier>(
-                  value: LicenseTier.premium,
-                  child: Text('高级版'),
-                ),
-              ],
-              onChanged: (LicenseTier? value) {
-                if (value == null) {
-                  return;
-                }
-                setState(() {
-                  _selectedTier = value;
-                });
-              },
-            ),
-            const SizedBox(height: 16),
             SwitchListTile.adaptive(
               value: _permanent,
               onChanged: (bool value) {
@@ -143,29 +116,29 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
                 child: Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: _presetDurationOptions.map((int days) {
-                    return ChoiceChip(
-                      label: Text('$days 天'),
-                      selected: _selectedPresetDurationDays == days,
-                      onSelected: (_) {
-                        setState(() {
-                          _selectedPresetDurationDays = days;
-                          _durationDaysController.text = days.toString();
-                        });
-                      },
-                    );
-                  }).toList()
-                    ..add(
-                      ChoiceChip(
-                        label: const Text('手动填写'),
-                        selected: _selectedPresetDurationDays == null,
-                        onSelected: (_) {
-                          setState(() {
-                            _selectedPresetDurationDays = null;
-                          });
-                        },
+                  children:
+                      _presetDurationOptions.map((int days) {
+                        return ChoiceChip(
+                          label: Text('$days 天'),
+                          selected: _selectedPresetDurationDays == days,
+                          onSelected: (_) {
+                            setState(() {
+                              _selectedPresetDurationDays = days;
+                              _durationDaysController.text = days.toString();
+                            });
+                          },
+                        );
+                      }).toList()..add(
+                        ChoiceChip(
+                          label: const Text('手动填写'),
+                          selected: _selectedPresetDurationDays == null,
+                          onSelected: (_) {
+                            setState(() {
+                              _selectedPresetDurationDays = null;
+                            });
+                          },
+                        ),
                       ),
-                    ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -195,35 +168,34 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
                 onChanged: (String value) {
                   final int? days = int.tryParse(value.trim());
                   setState(() {
-                    _selectedPresetDurationDays = _presetDurationOptions.contains(days)
-                        ? days
-                        : null;
+                    _selectedPresetDurationDays =
+                        _presetDurationOptions.contains(days) ? days : null;
                   });
                 },
               ),
-              const SizedBox(height: 16),
-              InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: _pickActivationDeadlineDate,
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: '首次激活截止日期',
-                    helperText: '到这一天结束前未激活，授权码将不能使用。',
-                    border: OutlineInputBorder(),
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: Text(
-                          _formatActivationDeadlineDate(_activationDeadlineDate),
-                        ),
+            ],
+            const SizedBox(height: 16),
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: _pickActivationDeadlineDate,
+              child: InputDecorator(
+                decoration: const InputDecoration(
+                  labelText: '首次激活截止日期',
+                  helperText: '约束授权码首次使用窗口，永久授权也需要设置。',
+                  border: OutlineInputBorder(),
+                ),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        _formatActivationDeadlineDate(_activationDeadlineDate),
                       ),
-                      const Icon(Icons.calendar_month_outlined),
-                    ],
-                  ),
+                    ),
+                    const Icon(Icons.calendar_month_outlined),
+                  ],
                 ),
               ),
-            ],
+            ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _operatorNameController,
@@ -251,7 +223,7 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.vpn_key),
-              label: Text(_submitting ? '生成中...' : '生成授权码'),
+              label: Text(_submitting ? '生成中...' : '生成离线密钥'),
             ),
           ],
         ),
@@ -275,10 +247,11 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
       final LicenseRecordEntity record = await _service.createLicenseRecord(
         bindName: _bindNameController.text,
         bindUserCode: _bindUserCodeController.text,
-        tier: _selectedTier,
         durationDays: durationDays,
         permanent: _permanent,
-        activationDeadline: _permanent ? _normalizeDeadlineForStorage(_activationDeadlineDate) : _normalizeDeadlineForStorage(_activationDeadlineDate),
+        activationDeadline: _normalizeDeadlineForStorage(
+          _activationDeadlineDate,
+        ),
         operatorName: _operatorNameController.text,
         remark: _remarkController.text,
       );
@@ -287,7 +260,9 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
         return;
       }
 
-      final _PostCreateAction? action = await _showGeneratedLicenseDialog(record);
+      final _PostCreateAction? action = await _showGeneratedLicenseDialog(
+        record,
+      );
       if (!mounted) {
         return;
       }
@@ -315,14 +290,14 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('生成失败：$error'),
-              duration: const Duration(seconds: 5),
-              action: SnackBarAction(
-                label: '私钥设置',
-                onPressed: () {
-                  context.go('/private-key');
-                },
-              ),
-            ),
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: '私钥设置',
+            onPressed: () {
+              context.go('/private-key');
+            },
+          ),
+        ),
       );
     } finally {
       if (mounted) {
@@ -340,7 +315,7 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('授权码已生成'),
+          title: const Text('离线密钥已生成'),
           content: SizedBox(
             width: 680,
             child: SingleChildScrollView(
@@ -351,14 +326,8 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
                   _InfoLine(label: '授权编号', value: record.licenseId),
                   _InfoLine(label: '绑定用户', value: record.bindName),
                   _InfoLine(
-                    label: '授权版本',
-                    value: record.tier == LicenseTier.basic ? '基础版' : '高级版',
-                  ),
-                  _InfoLine(
                     label: '有效期',
-                    value: record.permanent
-                        ? '永久'
-                        : '${record.durationDays ?? 0} 天',
+                    value: record.permanent ? '永久' : '${record.durationDays} 天',
                   ),
                   _InfoLine(
                     label: '首次激活截止',
@@ -368,7 +337,7 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    '授权码',
+                    '离线密钥',
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 8),
@@ -376,7 +345,9 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerLowest,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerLowest,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: Theme.of(context).colorScheme.outlineVariant,
@@ -422,12 +393,12 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
                       if (!dialogContext.mounted) {
                         return;
                       }
-                      ScaffoldMessenger.of(dialogContext).showSnackBar(
-                        const SnackBar(content: Text('授权码已复制')),
-                      );
+                      ScaffoldMessenger.of(
+                        dialogContext,
+                      ).showSnackBar(const SnackBar(content: Text('授权码已复制')));
                     },
                     icon: const Icon(Icons.copy_all),
-                    label: const Text('复制授权码'),
+                    label: const Text('复制离线密钥'),
                   ),
                 ],
               ),
@@ -444,7 +415,6 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
     _operatorNameController.clear();
     _remarkController.clear();
     setState(() {
-      _selectedTier = LicenseTier.basic;
       _selectedPresetDurationDays = 30;
       _durationDaysController.text = '30';
       _activationDeadlineDate = _defaultActivationDeadlineDate();
@@ -458,15 +428,7 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
   }
 
   DateTime _normalizeDeadlineForStorage(DateTime date) {
-    return DateTime(
-      date.year,
-      date.month,
-      date.day,
-      23,
-      59,
-      59,
-      999,
-    ).toUtc();
+    return DateTime(date.year, date.month, date.day, 23, 59, 59, 999).toUtc();
   }
 
   String _formatActivationDeadlineDate(DateTime date) {
@@ -475,8 +437,9 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
 
   Future<void> _pickActivationDeadlineDate() async {
     final DateTime now = DateTime.now();
-    final DateTime initialDate =
-        _activationDeadlineDate.isBefore(now) ? now : _activationDeadlineDate;
+    final DateTime initialDate = _activationDeadlineDate.isBefore(now)
+        ? now
+        : _activationDeadlineDate;
     final DateTime? picked = await showDatePicker(
       context: context,
       locale: const Locale('zh', 'CN'),
@@ -496,11 +459,7 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
   }
 }
 
-enum _PostCreateAction {
-  keepCreating,
-  viewDetail,
-  viewRecords,
-}
+enum _PostCreateAction { keepCreating, viewDetail, viewRecords }
 
 class _InfoLine extends StatelessWidget {
   const _InfoLine({required this.label, required this.value});

@@ -9,7 +9,6 @@ import 'package:teacher_hub_license_manager/core/storage/db_helper.dart';
 import 'package:teacher_hub_license_manager/modules/license_record/data/license_record_entity.dart';
 import 'package:teacher_hub_license_manager/modules/license_record/data/license_record_repository.dart';
 import 'package:teacher_hub_license_manager/modules/license_record/domain/license_export_service.dart';
-import 'package:teacher_toolkit_license_protocol/teacher_toolkit_license_protocol.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -43,14 +42,13 @@ void main() {
         licenseId: 'LIC-2026-0001',
         bindName: 'Zhang',
         bindUserCode: 'T001',
-        tier: LicenseTier.basic,
         durationDays: 180,
         permanent: false,
         issuedAt: now,
         activationDeadline: now.add(const Duration(days: 30)),
         operatorName: 'AdminA',
         remark: 'Initial issue',
-        rawLicense: 'TTK2.payload.signature',
+        rawLicense: 'TTK3.payload.signature',
         status: LicenseRecordStatus.active,
         exportedAt: null,
         createdAt: now,
@@ -72,11 +70,13 @@ void main() {
     expect(await textFile.exists(), isTrue);
     final String textContent = await textFile.readAsString();
     expect(textContent, contains('授权编号: LIC-2026-0001'));
+    expect(textContent, isNot(contains('授权版本')));
     expect(textContent, contains('创建时间:'));
     expect(textContent, contains('更新时间:'));
 
-    final File xlsxFile =
-        await exportService.exportRecordsAsXlsx(<LicenseRecordEntity>[record]);
+    final File xlsxFile = await exportService.exportRecordsAsXlsx(
+      <LicenseRecordEntity>[record],
+    );
     expect(await xlsxFile.exists(), isTrue);
     expect(xlsxFile.path, endsWith('.xlsx'));
 
@@ -85,12 +85,17 @@ void main() {
     final Sheet sheet = workbook.tables['授权记录']!;
     expect(sheet.maxRows, greaterThanOrEqualTo(2));
     expect(sheet.row(0)[0]?.value.toString(), '授权编号');
-    expect(sheet.row(0)[5]?.value.toString(), '首次激活截止');
-    expect(sheet.row(0)[8]?.value.toString(), '创建时间');
-    expect(sheet.row(0)[9]?.value.toString(), '更新时间');
-    expect(sheet.row(0)[12]?.value.toString(), '授权码');
-    expect(sheet.row(0)[13]?.value.toString(), '操作标记');
-    expect(sheet.row(1)[13]?.value.toString(), 'I');
+    expect(sheet.row(0)[3]?.value.toString(), '有效期');
+    expect(sheet.row(0)[4]?.value.toString(), '首次激活截止');
+    expect(sheet.row(0)[7]?.value.toString(), '创建时间');
+    expect(sheet.row(0)[8]?.value.toString(), '更新时间');
+    expect(sheet.row(0)[11]?.value.toString(), '授权码');
+    expect(sheet.row(0)[12]?.value.toString(), '操作标记');
+    expect(
+      sheet.row(0).map((Data? cell) => cell?.value.toString()).toList(),
+      isNot(contains('授权版本')),
+    );
+    expect(sheet.row(1)[12]?.value.toString(), 'I');
 
     final LicenseRecordEntity? updated = await repository.findByLicenseId(
       'LIC-2026-0001',

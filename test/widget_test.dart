@@ -6,7 +6,7 @@ void main() {
     await tester.pumpWidget(const LicenseManagerApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('授权记录'), findsOneWidget);
-    expect(find.text('新增授权'), findsOneWidget);
+    expect(find.text('授权总览'), findsOneWidget);
+    expect(find.byTooltip('新建授权'), findsOneWidget);
   });
 }

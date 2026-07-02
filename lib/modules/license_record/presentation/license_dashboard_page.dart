@@ -12,11 +12,10 @@ import 'package:teacher_hub_license_manager/modules/license_record/domain/licens
 import 'package:teacher_hub_license_manager/shared/chinese_date_time_formatter.dart';
 import 'package:teacher_hub_license_manager/shared/navigation/app_route_observer.dart';
 import 'package:teacher_hub_license_manager/shared/transient_snack_bar.dart';
-import 'package:teacher_toolkit_license_protocol/teacher_toolkit_license_protocol.dart';
 
 class LicenseDashboardPage extends StatefulWidget {
   const LicenseDashboardPage({super.key, LicenseRecordService? service})
-      : _service = service;
+    : _service = service;
 
   final LicenseRecordService? _service;
 
@@ -29,7 +28,8 @@ class _LicenseDashboardPageState extends State<LicenseDashboardPage>
   late final LicenseRecordService _service =
       widget._service ?? LicenseRecordService();
   final LicenseExportService _exportService = LicenseExportService();
-  final ExportDirectoryService _exportDirectoryService = ExportDirectoryService();
+  final ExportDirectoryService _exportDirectoryService =
+      ExportDirectoryService();
 
   Future<LicenseDashboardSummary>? _summaryFuture;
 
@@ -69,10 +69,7 @@ class _LicenseDashboardPageState extends State<LicenseDashboardPage>
       ),
       body: FutureBuilder<LicenseDashboardSummary>(
         future: _summaryFuture,
-        builder: (
-          BuildContext context,
-          AsyncSnapshot<LicenseDashboardSummary> snapshot,
-        ) {
+        builder: (BuildContext context, AsyncSnapshot<LicenseDashboardSummary> snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -93,8 +90,6 @@ class _LicenseDashboardPageState extends State<LicenseDashboardPage>
                 activeCount: 0,
                 revokedCount: 0,
                 replacedCount: 0,
-                basicCount: 0,
-                premiumCount: 0,
                 permanentCount: 0,
                 recentRecords: <LicenseRecordEntity>[],
               );
@@ -178,7 +173,7 @@ class _LicenseDashboardPageState extends State<LicenseDashboardPage>
                 const SizedBox(height: 24),
                 const _SectionTitle(
                   title: '统计概览',
-                  subtitle: '优先查看记录量、状态分布和版本结构。',
+                  subtitle: '优先查看记录量、状态分布和有效期结构。',
                 ),
                 const SizedBox(height: 12),
                 Wrap(
@@ -204,16 +199,6 @@ class _LicenseDashboardPageState extends State<LicenseDashboardPage>
                       label: '已替代',
                       value: '${summary.replacedCount}',
                       color: Colors.red,
-                    ),
-                    _StatCard(
-                      label: '基础版',
-                      value: '${summary.basicCount}',
-                      color: Colors.blue,
-                    ),
-                    _StatCard(
-                      label: '高级版',
-                      value: '${summary.premiumCount}',
-                      color: Colors.deepPurple,
                     ),
                     _StatCard(
                       label: '永久授权',
@@ -251,12 +236,15 @@ class _LicenseDashboardPageState extends State<LicenseDashboardPage>
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: <Widget>[
                                     CircleAvatar(
-                                      child: Text(record.bindName.characters.first),
+                                      child: Text(
+                                        record.bindName.characters.first,
+                                      ),
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: <Widget>[
                                           Text(
                                             record.bindName,
@@ -269,26 +257,29 @@ class _LicenseDashboardPageState extends State<LicenseDashboardPage>
                                           ),
                                           const SizedBox(height: 8),
                                           Text(
-                                            '${_tierLabel(record.tier)} · ${record.licenseId}',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyLarge,
+                                            '离线密钥 · ${record.licenseId}',
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodyLarge,
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
                                             '创建时间：${ChineseDateTimeFormatter.formatDateTime(record.createdAt)}',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyMedium,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodyMedium,
                                           ),
                                         ],
                                       ),
                                     ),
                                     const SizedBox(width: 16),
                                     ConstrainedBox(
-                                      constraints: const BoxConstraints(minWidth: 116),
+                                      constraints: const BoxConstraints(
+                                        minWidth: 116,
+                                      ),
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
                                         mainAxisSize: MainAxisSize.min,
                                         children: <Widget>[
                                           Text(
@@ -304,18 +295,18 @@ class _LicenseDashboardPageState extends State<LicenseDashboardPage>
                                           Text(
                                             record.permanent
                                                 ? '永久'
-                                                : '${record.durationDays ?? 0} 天',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyLarge,
+                                                : '${record.durationDays} 天',
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodyLarge,
                                           ),
                                           const SizedBox(height: 6),
                                           Text(
                                             '激活截止 ${ChineseDateTimeFormatter.formatDateTime(record.activationDeadline)}',
                                             textAlign: TextAlign.right,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodySmall,
                                           ),
                                         ],
                                       ),
@@ -439,15 +430,15 @@ class _LicenseDashboardPageState extends State<LicenseDashboardPage>
       showTransientSnackBar(
         context,
         SnackBar(
-            content: Text('导出完成，共 ${allRecords.length} 条，文件位置：${file.path}'),
-            duration: const Duration(seconds: 5),
-            action: SnackBarAction(
-              label: '打开目录',
-              onPressed: () {
-                _exportService.openExportDirectory();
-              },
-            ),
+          content: Text('导出完成，共 ${allRecords.length} 条，文件位置：${file.path}'),
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: '打开目录',
+            onPressed: () {
+              _exportService.openExportDirectory();
+            },
           ),
+        ),
       );
       _reload();
     } catch (error) {
@@ -466,9 +457,12 @@ class _LicenseDashboardPageState extends State<LicenseDashboardPage>
     try {
       _assertTemplateFileName(
         file: file,
-        requiredBaseName: LicenseImportService.existingRecordTemplateFileBaseName,
+        requiredBaseName:
+            LicenseImportService.existingRecordTemplateFileBaseName,
       );
-      final LicenseImportResult result = await _service.importExistingRecords(file);
+      final LicenseImportResult result = await _service.importExistingRecords(
+        file,
+      );
       if (!mounted) {
         return;
       }
@@ -490,9 +484,12 @@ class _LicenseDashboardPageState extends State<LicenseDashboardPage>
     try {
       _assertTemplateFileName(
         file: file,
-        requiredBaseName: LicenseImportService.batchGenerateTemplateFileBaseName,
+        requiredBaseName:
+            LicenseImportService.batchGenerateTemplateFileBaseName,
       );
-      final LicenseImportResult result = await _service.batchGenerateFromFile(file);
+      final LicenseImportResult result = await _service.batchGenerateFromFile(
+        file,
+      );
       if (!mounted) {
         return;
       }
@@ -515,15 +512,15 @@ class _LicenseDashboardPageState extends State<LicenseDashboardPage>
       showTransientSnackBar(
         context,
         SnackBar(
-            content: Text('模板已导出到：${file.path}'),
-            duration: const Duration(seconds: 5),
-            action: SnackBarAction(
-              label: '打开目录',
-              onPressed: () {
-                _exportService.openExportDirectory();
-              },
-            ),
+          content: Text('模板已导出到：${file.path}'),
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: '打开目录',
+            onPressed: () {
+              _exportService.openExportDirectory();
+            },
           ),
+        ),
       );
     } catch (error) {
       if (!mounted) {
@@ -542,15 +539,15 @@ class _LicenseDashboardPageState extends State<LicenseDashboardPage>
       showTransientSnackBar(
         context,
         SnackBar(
-            content: Text('模板已导出到：${file.path}'),
-            duration: const Duration(seconds: 5),
-            action: SnackBarAction(
-              label: '打开目录',
-              onPressed: () {
-                _exportService.openExportDirectory();
-              },
-            ),
+          content: Text('模板已导出到：${file.path}'),
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: '打开目录',
+            onPressed: () {
+              _exportService.openExportDirectory();
+            },
           ),
+        ),
       );
     } catch (error) {
       if (!mounted) {
@@ -699,8 +696,8 @@ class _LicenseDashboardPageState extends State<LicenseDashboardPage>
                   Text('1. 授权编号：必填，业务唯一键，用于 I/U/D 判断目标记录。'),
                   Text('2. 绑定用户：必填，客户端显示的绑定名称。'),
                   Text('3. 用户编号：选填，用于内部标识用户或机构编号。'),
-                  Text('4. 授权版本：必填，只允许免费版 / 基础版 / 高级版。'),
-                  Text('5. 有效期：必填，填写“永久”或天数。'),
+                  Text('4. 有效期：必填，填写“永久”或天数。'),
+                  Text('5. 首次激活截止：必填，使用可被系统解析的日期时间。'),
                   Text('6. 状态：必填，只允许有效 / 已作废 / 已替代。'),
                   Text('7. 发码时间：必填，使用可被系统解析的日期时间。'),
                   Text('8. 创建时间：必填，表示记录创建时间。'),
@@ -714,9 +711,9 @@ class _LicenseDashboardPageState extends State<LicenseDashboardPage>
                   SizedBox(height: 8),
                   Text('1. 绑定用户：必填，用于生成授权记录时的绑定名称。'),
                   Text('2. 用户编号：选填，用于内部识别。'),
-                  Text('3. 授权版本：必填，只允许免费版 / 基础版 / 高级版。'),
-                  Text('4. 有效期天数：永久授权为“否”时必填，且必须大于 0。'),
-                  Text('5. 永久授权：必填，填写 是 / 否 或兼容 true / false。'),
+                  Text('3. 有效期天数：永久授权为“否”时必填，且必须大于 0。'),
+                  Text('4. 永久授权：必填，填写 是 / 否 或兼容 true / false。'),
+                  Text('5. 首次激活截止日期：选填，留空时默认取发码时间后 30 天。'),
                   Text('6. 操作人：选填，记录批量生成责任人。'),
                   Text('7. 备注：选填，补充说明。'),
                   Text('8. 操作标记：必填，当前批量生码导入仅支持 I。'),
@@ -738,10 +735,7 @@ class _LicenseDashboardPageState extends State<LicenseDashboardPage>
   void _showFailureSnackBar(String message) {
     showTransientSnackBar(
       context,
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 5),
-      ),
+      SnackBar(content: Text(message), duration: const Duration(seconds: 5)),
     );
   }
 
@@ -761,14 +755,6 @@ class _LicenseDashboardPageState extends State<LicenseDashboardPage>
     }
   }
 
-  String _tierLabel(LicenseTier tier) {
-    return switch (tier) {
-      LicenseTier.free => '免费版',
-      LicenseTier.basic => '基础版',
-      LicenseTier.premium => '高级版',
-    };
-  }
-
   String _statusLabel(LicenseRecordStatus status) {
     return switch (status) {
       LicenseRecordStatus.active => '有效',
@@ -779,10 +765,7 @@ class _LicenseDashboardPageState extends State<LicenseDashboardPage>
 }
 
 class _HeroCard extends StatelessWidget {
-  const _HeroCard({
-    required this.totalCount,
-    required this.activeCount,
-  });
+  const _HeroCard({required this.totalCount, required this.activeCount});
 
   final int totalCount;
   final int activeCount;
@@ -794,10 +777,7 @@ class _HeroCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         gradient: const LinearGradient(
-          colors: <Color>[
-            Color(0xFFECF8F5),
-            Color(0xFFF6FBFA),
-          ],
+          colors: <Color>[Color(0xFFECF8F5), Color(0xFFF6FBFA)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -807,9 +787,9 @@ class _HeroCard extends StatelessWidget {
         children: <Widget>[
           Text(
             '授权管理总览',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           Text(
@@ -823,10 +803,7 @@ class _HeroCard extends StatelessWidget {
 }
 
 class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({
-    required this.title,
-    required this.subtitle,
-  });
+  const _SectionTitle({required this.title, required this.subtitle});
 
   final String title;
   final String subtitle;
@@ -838,15 +815,12 @@ class _SectionTitle extends StatelessWidget {
       children: <Widget>[
         Text(
           title,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 6),
-        Text(
-          subtitle,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
+        Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
       ],
     );
   }
@@ -891,10 +865,7 @@ class _ActionTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  subtitle,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
+                Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
               ],
             ),
           ),

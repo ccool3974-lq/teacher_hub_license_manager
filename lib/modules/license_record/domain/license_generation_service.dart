@@ -27,10 +27,10 @@ class LicenseGenerationService {
     Future<List<int>> Function()? loadPrivateKeySeed,
     DateTime Function()? now,
     Random? random,
-  })  : _privateKeyLoader = privateKeyLoader ?? PrivateKeyLoader(),
-        _loadPrivateKeySeed = loadPrivateKeySeed,
-        _now = now ?? DateTime.now,
-        _random = random ?? Random.secure();
+  }) : _privateKeyLoader = privateKeyLoader ?? PrivateKeyLoader(),
+       _loadPrivateKeySeed = loadPrivateKeySeed,
+       _now = now ?? DateTime.now,
+       _random = random ?? Random.secure();
 
   final PrivateKeyLoader _privateKeyLoader;
   final Future<List<int>> Function()? _loadPrivateKeySeed;
@@ -39,13 +39,14 @@ class LicenseGenerationService {
 
   Future<GeneratedLicense> generate({
     required String bindName,
-    required LicenseTier tier,
+    String? bindUserCode,
     required int durationDays,
     required bool permanent,
     DateTime? activationDeadline,
     String? licenseId,
   }) async {
     final String normalizedBindName = bindName.trim();
+    final String? normalizedBindUserCode = _trimToNull(bindUserCode);
     if (normalizedBindName.isEmpty) {
       throw StateError('绑定用户姓名不能为空。');
     }
@@ -66,26 +67,32 @@ class LicenseGenerationService {
     final LicensePayload payload = LicensePayload(
       product: licenseProductName,
       licenseId: resolvedLicenseId,
-      tier: tier,
       bindName: normalizedBindName,
+      bindUserCode: normalizedBindUserCode,
       durationDays: permanent ? 0 : durationDays,
       permanent: permanent,
       issuedAt: issuedAt,
       activationDeadline: resolvedActivationDeadline,
-      features: _defaultFeaturesForTier(tier),
       nonce: _generateNonce(),
     );
+    final LicensePayloadValidationResult validation =
+        LicensePayloadValidator.validateForIssue(payload, issuedAt);
+    if (!validation.isValid) {
+      throw StateError(validation.errors.join('；'));
+    }
 
     final String payloadSegment = LicenseCodec.encodePayloadSegment(payload);
     final List<int> seed =
-        await (_loadPrivateKeySeed?.call() ?? _privateKeyLoader.loadPrivateKeySeed());
+        await (_loadPrivateKeySeed?.call() ??
+            _privateKeyLoader.loadPrivateKeySeed());
     final SimpleKeyPair keyPair = await Ed25519().newKeyPairFromSeed(seed);
     final Signature signature = await Ed25519().sign(
       utf8.encode(payloadSegment),
       keyPair: keyPair,
     );
-    final String signatureSegment =
-        base64Url.encode(signature.bytes).replaceAll('=', '');
+    final String signatureSegment = base64Url
+        .encode(signature.bytes)
+        .replaceAll('=', '');
     final String rawLicense =
         '$licenseStructuredPrefix.$payloadSegment.$signatureSegment';
 
@@ -98,26 +105,6 @@ class LicenseGenerationService {
     );
   }
 
-  List<String> _defaultFeaturesForTier(LicenseTier tier) {
-    return switch (tier) {
-      LicenseTier.free => const <String>[],
-      LicenseTier.basic => const <String>[
-          'schoolBaseImportExcel',
-          'schoolBaseExportExcel',
-          'schoolBaseViewMultiMode',
-          'schoolBaseSearchAdvanced',
-        ],
-      LicenseTier.premium => const <String>[
-          'schoolBaseImportExcel',
-          'schoolBaseExportExcel',
-          'schoolBaseViewMultiMode',
-          'schoolBaseSearchAdvanced',
-          'appDataBackupRestore',
-          'appPremiumModules',
-        ],
-    };
-  }
-
   String _generateLicenseId(DateTime issuedAt) {
     final String timestamp =
         '${issuedAt.year.toString().padLeft(4, '0')}'
@@ -126,14 +113,26 @@ class LicenseGenerationService {
         '${issuedAt.hour.toString().padLeft(2, '0')}'
         '${issuedAt.minute.toString().padLeft(2, '0')}'
         '${issuedAt.second.toString().padLeft(2, '0')}';
-    final String suffix =
-        _random.nextInt(0x10000).toRadixString(16).padLeft(4, '0').toUpperCase();
+    final String suffix = _random
+        .nextInt(0x10000)
+        .toRadixString(16)
+        .padLeft(4, '0')
+        .toUpperCase();
     return 'LIC-$timestamp-$suffix';
   }
 
   String _generateNonce() {
-    return List<int>.generate(16, (_) => _random.nextInt(256))
-        .map((int value) => value.toRadixString(16).padLeft(2, '0'))
-        .join();
+    return List<int>.generate(
+      16,
+      (_) => _random.nextInt(256),
+    ).map((int value) => value.toRadixString(16).padLeft(2, '0')).join();
+  }
+
+  String? _trimToNull(String? value) {
+    final String? trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return null;
+    }
+    return trimmed;
   }
 }

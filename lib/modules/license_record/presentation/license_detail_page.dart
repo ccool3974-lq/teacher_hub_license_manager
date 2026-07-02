@@ -7,7 +7,6 @@ import 'package:teacher_hub_license_manager/modules/license_record/domain/licens
 import 'package:teacher_hub_license_manager/shared/chinese_date_time_formatter.dart';
 import 'package:teacher_hub_license_manager/shared/navigation/app_route_observer.dart';
 import 'package:teacher_hub_license_manager/shared/transient_snack_bar.dart';
-import 'package:teacher_toolkit_license_protocol/teacher_toolkit_license_protocol.dart';
 
 class LicenseDetailPage extends StatefulWidget {
   const LicenseDetailPage({
@@ -28,8 +27,9 @@ class _LicenseDetailPageState extends State<LicenseDetailPage>
   late final LicenseRecordService _service =
       widget._service ?? LicenseRecordService();
   final LicenseExportService _exportService = LicenseExportService();
-  late Future<LicenseRecordEntity?> _recordFuture =
-      _service.getRecord(widget.licenseId);
+  late Future<LicenseRecordEntity?> _recordFuture = _service.getRecord(
+    widget.licenseId,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -51,186 +51,198 @@ class _LicenseDetailPageState extends State<LicenseDetailPage>
       ),
       body: FutureBuilder<LicenseRecordEntity?>(
         future: _recordFuture,
-        builder: (
-          BuildContext context,
-          AsyncSnapshot<LicenseRecordEntity?> snapshot,
-        ) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('加载授权详情失败：${snapshot.error}'));
-          }
+        builder:
+            (
+              BuildContext context,
+              AsyncSnapshot<LicenseRecordEntity?> snapshot,
+            ) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(child: Text('加载授权详情失败：${snapshot.error}'));
+              }
 
-          final LicenseRecordEntity? record = snapshot.data;
-          if (record == null) {
-            return const Center(child: Text('未找到对应的授权记录。'));
-          }
+              final LicenseRecordEntity? record = snapshot.data;
+              if (record == null) {
+                return const Center(child: Text('未找到对应的授权记录。'));
+              }
 
-          return ListView(
-            padding: const EdgeInsets.all(24),
-            children: <Widget>[
-              _InfoCard(
-                title: '基本信息',
-                rows: <_InfoRow>[
-                  _InfoRow('授权编号', record.licenseId),
-                  _InfoRow('绑定用户', record.bindName),
-                  _InfoRow('用户编号', record.bindUserCode ?? '未填写'),
-                  _InfoRow('授权版本', _tierLabel(record.tier)),
-                  _InfoRow(
-                    '有效期',
-                    record.permanent ? '永久' : '${record.durationDays} 天',
-                  ),
-                  _InfoRow('首次激活截止', _formatDateTime(record.activationDeadline)),
-                  _InfoRow('状态', _statusLabel(record.status)),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      const Text(
-                        '状态管理',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
+              return ListView(
+                padding: const EdgeInsets.all(24),
+                children: <Widget>[
+                  _InfoCard(
+                    title: '基本信息',
+                    rows: <_InfoRow>[
+                      _InfoRow('授权编号', record.licenseId),
+                      _InfoRow('绑定用户', record.bindName),
+                      _InfoRow('用户编号', record.bindUserCode ?? '未填写'),
+                      _InfoRow(
+                        '有效期',
+                        record.permanent ? '永久' : '${record.durationDays} 天',
                       ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        children: LicenseRecordStatus.values.map(
-                          (LicenseRecordStatus status) {
-                            return ChoiceChip(
-                              label: Text(_statusLabel(status)),
-                              selected: record.status == status,
-                              onSelected: (bool selected) {
-                                if (!selected || record.status == status) {
-                                  return;
-                                }
-                                _changeStatus(status);
-                              },
-                            );
-                          },
-                        ).toList(growable: false),
+                      _InfoRow(
+                        '首次激活截止',
+                        _formatDateTime(record.activationDeadline),
                       ),
+                      _InfoRow('状态', _statusLabel(record.status)),
                     ],
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              _InfoCard(
-                title: '记录信息',
-                rows: <_InfoRow>[
-                  _InfoRow('发码时间', _formatDateTime(record.issuedAt)),
-                  _InfoRow('创建时间', _formatDateTime(record.createdAt)),
-                  _InfoRow('更新时间', _formatDateTime(record.updatedAt)),
-                  _InfoRow('操作人', record.operatorName ?? '未填写'),
-                  _InfoRow('备注', record.remark ?? '未填写'),
-                  _InfoRow(
-                    '最近导出时间',
-                    record.exportedAt == null
-                        ? '未导出'
-                        : _formatDateTime(record.exportedAt!),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  const SizedBox(height: 16),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           const Text(
-                            '授权码',
+                            '状态管理',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
+                          const SizedBox(height: 12),
                           Wrap(
                             spacing: 8,
-                            children: <Widget>[
-                              TextButton.icon(
-                                onPressed: () async {
-                                  await Clipboard.setData(
-                                    ClipboardData(text: record.rawLicense),
+                            children: LicenseRecordStatus.values
+                                .map((LicenseRecordStatus status) {
+                                  return ChoiceChip(
+                                    label: Text(_statusLabel(status)),
+                                    selected: record.status == status,
+                                    onSelected: (bool selected) {
+                                      if (!selected ||
+                                          record.status == status) {
+                                        return;
+                                      }
+                                      _changeStatus(status);
+                                    },
                                   );
-                                  if (!context.mounted) {
-                                    return;
-                                  }
-                                  showTransientSnackBar(
-                                    context,
-                                    const SnackBar(
-                                      content: Text('授权码已复制。'),
-                                      duration: Duration(seconds: 5),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.copy),
-                                label: const Text('复制'),
-                              ),
-                              TextButton.icon(
-                                onPressed: () async {
-                                  try {
-                                    final file =
-                                        await _service.exportRecordAsText(record);
-                                    if (!context.mounted) {
-                                      return;
-                                    }
-                                    showTransientSnackBar(
-                                      context,
-                                      SnackBar(
-                                          content: Text('授权文件已导出到：${file.path}'),
-                                          duration: const Duration(seconds: 5),
-                                          action: SnackBarAction(
-                                            label: '打开目录',
-                                            onPressed: () {
-                                              _exportService.openExportDirectory();
-                                            },
-                                          ),
-                                        ),
-                                    );
-                                    setState(() {
-                                      _recordFuture =
-                                          _service.getRecord(widget.licenseId);
-                                    });
-                                  } catch (error) {
-                                    if (!context.mounted) {
-                                      return;
-                                    }
-                                    showTransientSnackBar(
-                                      context,
-                                      SnackBar(
-                                        content: Text('导出失败：$error'),
-                                        duration: const Duration(seconds: 5),
-                                      ),
-                                    );
-                                  }
-                                },
-                                icon: const Icon(Icons.download),
-                                label: const Text('导出'),
-                              ),
-                            ],
+                                })
+                                .toList(growable: false),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      SelectableText(record.rawLicense),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _InfoCard(
+                    title: '记录信息',
+                    rows: <_InfoRow>[
+                      _InfoRow('发码时间', _formatDateTime(record.issuedAt)),
+                      _InfoRow('创建时间', _formatDateTime(record.createdAt)),
+                      _InfoRow('更新时间', _formatDateTime(record.updatedAt)),
+                      _InfoRow('操作人', record.operatorName ?? '未填写'),
+                      _InfoRow('备注', record.remark ?? '未填写'),
+                      _InfoRow(
+                        '最近导出时间',
+                        record.exportedAt == null
+                            ? '未导出'
+                            : _formatDateTime(record.exportedAt!),
+                      ),
                     ],
                   ),
-                ),
-              ),
-            ],
-          );
-        },
+                  const SizedBox(height: 16),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: <Widget>[
+                              const Text(
+                                '离线密钥',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Wrap(
+                                spacing: 8,
+                                children: <Widget>[
+                                  TextButton.icon(
+                                    onPressed: () async {
+                                      await Clipboard.setData(
+                                        ClipboardData(text: record.rawLicense),
+                                      );
+                                      if (!context.mounted) {
+                                        return;
+                                      }
+                                      showTransientSnackBar(
+                                        context,
+                                        const SnackBar(
+                                          content: Text('离线密钥已复制。'),
+                                          duration: Duration(seconds: 5),
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.copy),
+                                    label: const Text('复制'),
+                                  ),
+                                  TextButton.icon(
+                                    onPressed: () async {
+                                      try {
+                                        final file = await _service
+                                            .exportRecordAsText(record);
+                                        if (!context.mounted) {
+                                          return;
+                                        }
+                                        showTransientSnackBar(
+                                          context,
+                                          SnackBar(
+                                            content: Text(
+                                              '授权文件已导出到：${file.path}',
+                                            ),
+                                            duration: const Duration(
+                                              seconds: 5,
+                                            ),
+                                            action: SnackBarAction(
+                                              label: '打开目录',
+                                              onPressed: () {
+                                                _exportService
+                                                    .openExportDirectory();
+                                              },
+                                            ),
+                                          ),
+                                        );
+                                        setState(() {
+                                          _recordFuture = _service.getRecord(
+                                            widget.licenseId,
+                                          );
+                                        });
+                                      } catch (error) {
+                                        if (!context.mounted) {
+                                          return;
+                                        }
+                                        showTransientSnackBar(
+                                          context,
+                                          SnackBar(
+                                            content: Text('导出失败：$error'),
+                                            duration: const Duration(
+                                              seconds: 5,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    icon: const Icon(Icons.download),
+                                    label: const Text('导出'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          SelectableText(record.rawLicense),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
       ),
     );
   }
@@ -278,14 +290,6 @@ class _LicenseDetailPageState extends State<LicenseDetailPage>
     }
   }
 
-  String _tierLabel(LicenseTier tier) {
-    return switch (tier) {
-      LicenseTier.free => '免费版',
-      LicenseTier.basic => '基础版',
-      LicenseTier.premium => '高级版',
-    };
-  }
-
   String _statusLabel(LicenseRecordStatus status) {
     return switch (status) {
       LicenseRecordStatus.active => '有效',
@@ -300,10 +304,7 @@ class _LicenseDetailPageState extends State<LicenseDetailPage>
 }
 
 class _InfoCard extends StatelessWidget {
-  const _InfoCard({
-    required this.title,
-    required this.rows,
-  });
+  const _InfoCard({required this.title, required this.rows});
 
   final String title;
   final List<_InfoRow> rows;
@@ -318,10 +319,7 @@ class _InfoCard extends StatelessWidget {
           children: <Widget>[
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
             ...rows.map(
@@ -335,10 +333,8 @@ class _InfoCard extends StatelessWidget {
                       child: Text(
                         row.label,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
                     Expanded(child: Text(row.value)),

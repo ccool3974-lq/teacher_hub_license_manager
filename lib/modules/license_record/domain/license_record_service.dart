@@ -5,7 +5,6 @@ import 'package:teacher_hub_license_manager/modules/license_record/data/license_
 import 'package:teacher_hub_license_manager/modules/license_record/data/license_record_repository.dart';
 import 'package:teacher_hub_license_manager/modules/license_record/domain/license_export_service.dart';
 import 'package:teacher_hub_license_manager/modules/license_record/domain/license_generation_service.dart';
-import 'package:teacher_toolkit_license_protocol/teacher_toolkit_license_protocol.dart';
 
 class LicenseDashboardSummary {
   const LicenseDashboardSummary({
@@ -13,8 +12,6 @@ class LicenseDashboardSummary {
     required this.activeCount,
     required this.revokedCount,
     required this.replacedCount,
-    required this.basicCount,
-    required this.premiumCount,
     required this.permanentCount,
     required this.recentRecords,
   });
@@ -23,8 +20,6 @@ class LicenseDashboardSummary {
   final int activeCount;
   final int revokedCount;
   final int replacedCount;
-  final int basicCount;
-  final int premiumCount;
   final int permanentCount;
   final List<LicenseRecordEntity> recentRecords;
 }
@@ -36,11 +31,11 @@ class LicenseRecordService {
     LicenseExportService? exportService,
     LicenseImportService? importService,
     DateTime Function()? now,
-  })  : _repository = repository ?? const LicenseRecordRepository(),
-        _generationService = generationService ?? LicenseGenerationService(),
-        _exportService = exportService,
-        _importService = importService,
-        _now = now ?? DateTime.now;
+  }) : _repository = repository ?? const LicenseRecordRepository(),
+       _generationService = generationService ?? LicenseGenerationService(),
+       _exportService = exportService,
+       _importService = importService,
+       _now = now ?? DateTime.now;
 
   final LicenseRecordRepository _repository;
   final LicenseGenerationService _generationService;
@@ -51,7 +46,6 @@ class LicenseRecordService {
   Future<LicenseRecordEntity> createLicenseRecord({
     required String bindName,
     String? bindUserCode,
-    required LicenseTier tier,
     required int durationDays,
     required bool permanent,
     DateTime? activationDeadline,
@@ -60,7 +54,7 @@ class LicenseRecordService {
   }) async {
     final GeneratedLicense generated = await _generationService.generate(
       bindName: bindName,
-      tier: tier,
+      bindUserCode: bindUserCode,
       durationDays: durationDays,
       permanent: permanent,
       activationDeadline: activationDeadline,
@@ -71,13 +65,10 @@ class LicenseRecordService {
       licenseId: generated.licenseId,
       bindName: bindName.trim(),
       bindUserCode: _trimToNull(bindUserCode),
-      tier: tier,
-      durationDays: permanent ? null : durationDays,
+      durationDays: permanent ? 0 : durationDays,
       permanent: permanent,
       issuedAt: generated.issuedAt,
-      activationDeadline:
-          generated.payload.activationDeadline ??
-          generated.issuedAt.add(const Duration(days: 30)),
+      activationDeadline: generated.payload.activationDeadline,
       operatorName: _trimToNull(operatorName),
       remark: _trimToNull(remark),
       rawLicense: generated.rawLicense,
@@ -101,19 +92,22 @@ class LicenseRecordService {
     return LicenseDashboardSummary(
       totalCount: records.length,
       activeCount: records
-          .where((LicenseRecordEntity record) => record.status == LicenseRecordStatus.active)
+          .where(
+            (LicenseRecordEntity record) =>
+                record.status == LicenseRecordStatus.active,
+          )
           .length,
       revokedCount: records
-          .where((LicenseRecordEntity record) => record.status == LicenseRecordStatus.revoked)
+          .where(
+            (LicenseRecordEntity record) =>
+                record.status == LicenseRecordStatus.revoked,
+          )
           .length,
       replacedCount: records
-          .where((LicenseRecordEntity record) => record.status == LicenseRecordStatus.replaced)
-          .length,
-      basicCount: records
-          .where((LicenseRecordEntity record) => record.tier == LicenseTier.basic)
-          .length,
-      premiumCount: records
-          .where((LicenseRecordEntity record) => record.tier == LicenseTier.premium)
+          .where(
+            (LicenseRecordEntity record) =>
+                record.status == LicenseRecordStatus.replaced,
+          )
           .length,
       permanentCount: records
           .where((LicenseRecordEntity record) => record.permanent)

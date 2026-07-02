@@ -5,7 +5,6 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:teacher_hub_license_manager/core/storage/db_helper.dart';
 import 'package:teacher_hub_license_manager/modules/license_record/data/license_record_entity.dart';
 import 'package:teacher_hub_license_manager/modules/license_record/data/license_record_repository.dart';
-import 'package:teacher_toolkit_license_protocol/teacher_toolkit_license_protocol.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -39,14 +38,13 @@ void main() {
         licenseId: 'LIC-2026-0001',
         bindName: 'Zhang',
         bindUserCode: 'T001',
-        tier: LicenseTier.basic,
         durationDays: 180,
         permanent: false,
         issuedAt: now,
         activationDeadline: now.add(const Duration(days: 30)),
         operatorName: 'AdminA',
         remark: 'Internal test',
-        rawLicense: 'TTK2.payload.signature',
+        rawLicense: 'TTK3.payload.signature',
         status: LicenseRecordStatus.active,
         exportedAt: null,
         createdAt: now,
@@ -56,11 +54,12 @@ void main() {
 
     expect(inserted.id, isNotNull);
 
-    final LicenseRecordEntity? loaded =
-        await repository.findByLicenseId('LIC-2026-0001');
+    final LicenseRecordEntity? loaded = await repository.findByLicenseId(
+      'LIC-2026-0001',
+    );
     expect(loaded, isNotNull);
     expect(loaded!.bindName, 'Zhang');
-    expect(loaded.tier, LicenseTier.basic);
+    expect(loaded.durationDays, 180);
 
     final List<LicenseRecordEntity> records = await repository.listAll();
     expect(records, hasLength(1));
@@ -75,14 +74,14 @@ void main() {
     );
     expect(updatedRows, 1);
 
-    final LicenseRecordEntity? updated =
-        await repository.findByLicenseId('LIC-2026-0001');
+    final LicenseRecordEntity? updated = await repository.findByLicenseId(
+      'LIC-2026-0001',
+    );
     expect(updated, isNotNull);
     expect(updated!.status, LicenseRecordStatus.revoked);
     expect(updated.exportedAt, exportedAt);
 
-    final int deletedRows =
-        await repository.deleteByLicenseId('LIC-2026-0001');
+    final int deletedRows = await repository.deleteByLicenseId('LIC-2026-0001');
     expect(deletedRows, 1);
     expect(await repository.findByLicenseId('LIC-2026-0001'), isNull);
   });
@@ -94,14 +93,13 @@ void main() {
         licenseId: 'LIC-2026-0002',
         bindName: 'Original',
         bindUserCode: 'T010',
-        tier: LicenseTier.basic,
         durationDays: 30,
         permanent: false,
         issuedAt: now,
         activationDeadline: now.add(const Duration(days: 30)),
         operatorName: 'AdminA',
         remark: 'First',
-        rawLicense: 'TTK2.first.signature',
+        rawLicense: 'TTK3.first.signature',
         status: LicenseRecordStatus.active,
         exportedAt: null,
         createdAt: now,
@@ -109,31 +107,31 @@ void main() {
       ),
     );
 
-    final LicenseRecordEntity updatedRecord = await repository.upsertByLicenseId(
-      LicenseRecordEntity(
-        licenseId: 'LIC-2026-0002',
-        bindName: 'Updated',
-        bindUserCode: 'T011',
-        tier: LicenseTier.premium,
-        durationDays: null,
-        permanent: true,
-        issuedAt: now.add(const Duration(days: 1)),
-        activationDeadline: now.add(const Duration(days: 45)),
-        operatorName: 'AdminB',
-        remark: 'Second',
-        rawLicense: 'TTK2.second.signature',
-        status: LicenseRecordStatus.replaced,
-        exportedAt: null,
-        createdAt: now,
-        updatedAt: now.add(const Duration(days: 1)),
-      ),
-    );
+    final LicenseRecordEntity updatedRecord = await repository
+        .upsertByLicenseId(
+          LicenseRecordEntity(
+            licenseId: 'LIC-2026-0002',
+            bindName: 'Updated',
+            bindUserCode: 'T011',
+            durationDays: 0,
+            permanent: true,
+            issuedAt: now.add(const Duration(days: 1)),
+            activationDeadline: now.add(const Duration(days: 45)),
+            operatorName: 'AdminB',
+            remark: 'Second',
+            rawLicense: 'TTK3.second.signature',
+            status: LicenseRecordStatus.replaced,
+            exportedAt: null,
+            createdAt: now,
+            updatedAt: now.add(const Duration(days: 1)),
+          ),
+        );
 
     final List<LicenseRecordEntity> records = await repository.listAll();
     expect(records, hasLength(1));
     expect(updatedRecord.id, isNotNull);
     expect(records.first.bindName, 'Updated');
-    expect(records.first.tier, LicenseTier.premium);
+    expect(records.first.durationDays, 0);
     expect(records.first.status, LicenseRecordStatus.replaced);
   });
 }

@@ -10,7 +10,6 @@ import 'package:teacher_hub_license_manager/modules/license_record/data/license_
 import 'package:teacher_hub_license_manager/modules/license_record/domain/license_generation_service.dart';
 import 'package:teacher_hub_license_manager/modules/license_record/domain/license_import_service.dart';
 import 'package:teacher_hub_license_manager/modules/license_record/domain/license_record_service.dart';
-import 'package:teacher_toolkit_license_protocol/teacher_toolkit_license_protocol.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -44,14 +43,13 @@ void main() {
         licenseId: 'LIC-2026-0003',
         bindName: '旧名称',
         bindUserCode: 'T001',
-        tier: LicenseTier.basic,
         durationDays: 30,
         permanent: false,
         issuedAt: now,
         activationDeadline: now.add(const Duration(days: 30)),
         operatorName: 'AdminA',
         remark: '旧备注',
-        rawLicense: 'TTK2.old.signature',
+        rawLicense: 'TTK3.old.signature',
         status: LicenseRecordStatus.active,
         exportedAt: null,
         createdAt: now,
@@ -74,7 +72,6 @@ void main() {
       TextCellValue('LIC-2026-0003'),
       TextCellValue('新名称'),
       TextCellValue('T009'),
-      TextCellValue('高级版'),
       TextCellValue('永久'),
       TextCellValue(now.add(const Duration(days: 20)).toIso8601String()),
       TextCellValue('已替代'),
@@ -83,7 +80,7 @@ void main() {
       TextCellValue(now.add(const Duration(hours: 1)).toIso8601String()),
       TextCellValue('AdminB'),
       TextCellValue('新备注'),
-      TextCellValue('TTK2.new.signature'),
+      TextCellValue('TTK3.new.signature'),
       TextCellValue('U'),
     ]);
     await file.writeAsBytes(workbook.encode()!);
@@ -93,7 +90,8 @@ void main() {
       now: () => now,
     );
 
-    final LicenseImportResult result = await importService.importExistingRecords(file);
+    final LicenseImportResult result = await importService
+        .importExistingRecords(file);
     expect(result.totalRows, 1);
     expect(result.successCount, 1);
     expect(result.failureCount, 0);
@@ -101,21 +99,46 @@ void main() {
     final List<LicenseRecordEntity> records = await repository.listAll();
     expect(records, hasLength(1));
     expect(records.first.bindName, '新名称');
-    expect(records.first.tier, LicenseTier.premium);
+    expect(records.first.durationDays, 0);
     expect(records.first.status, LicenseRecordStatus.replaced);
-    expect(records.first.rawLicense, 'TTK2.new.signature');
-    expect(
-      records.first.activationDeadline,
-      now.add(const Duration(days: 20)),
-    );
+    expect(records.first.rawLicense, 'TTK3.new.signature');
+    expect(records.first.activationDeadline, now.add(const Duration(days: 20)));
   });
 
   test('batchGenerateFromFile creates new signed records', () async {
     const List<int> seed = <int>[
-      0x9d, 0x61, 0xb1, 0x9d, 0xef, 0xfd, 0x5a, 0x60,
-      0xba, 0x84, 0xaf, 0x49, 0x2e, 0xcc, 0x4c, 0x44,
-      0xc5, 0x69, 0x7b, 0x32, 0x69, 0x19, 0x70, 0x3b,
-      0xac, 0x03, 0x1c, 0xae, 0x7f, 0x60, 0xd5, 0x7f,
+      0x9d,
+      0x61,
+      0xb1,
+      0x9d,
+      0xef,
+      0xfd,
+      0x5a,
+      0x60,
+      0xba,
+      0x84,
+      0xaf,
+      0x49,
+      0x2e,
+      0xcc,
+      0x4c,
+      0x44,
+      0xc5,
+      0x69,
+      0x7b,
+      0x32,
+      0x69,
+      0x19,
+      0x70,
+      0x3b,
+      0xac,
+      0x03,
+      0x1c,
+      0xae,
+      0x7f,
+      0x60,
+      0xd5,
+      0x7f,
     ];
     final DateTime now = DateTime.utc(2026, 4, 2, 12, 0);
     final LicenseRecordService recordService = LicenseRecordService(
@@ -142,7 +165,6 @@ void main() {
     sheet.appendRow(<CellValue>[
       TextCellValue('张老师'),
       TextCellValue('T100'),
-      TextCellValue('基础版'),
       TextCellValue('45'),
       TextCellValue('否'),
       TextCellValue(now.add(const Duration(days: 25)).toIso8601String()),
@@ -158,7 +180,8 @@ void main() {
       now: () => now,
     );
 
-    final LicenseImportResult result = await importService.batchGenerateFromFile(file);
+    final LicenseImportResult result = await importService
+        .batchGenerateFromFile(file);
     expect(result.totalRows, 1);
     expect(result.successCount, 1);
     expect(result.failureCount, 0);
@@ -168,75 +191,79 @@ void main() {
     expect(records.first.bindName, '张老师');
     expect(records.first.durationDays, 45);
     expect(records.first.activationDeadline, now.add(const Duration(days: 25)));
-    expect(records.first.rawLicense.startsWith('$licenseStructuredPrefix.'), isTrue);
+    expect(records.first.rawLicense.startsWith('TTK3.'), isTrue);
   });
 
-  test('importExistingRecords deletes existing record when marker is D', () async {
-    final DateTime now = DateTime.utc(2026, 4, 2, 12, 0);
-    await repository.insert(
-      LicenseRecordEntity(
-        licenseId: 'LIC-2026-0004',
-        bindName: '待删除',
-        bindUserCode: 'T020',
-        tier: LicenseTier.basic,
-        durationDays: 30,
-        permanent: false,
-        issuedAt: now,
-        activationDeadline: now.add(const Duration(days: 30)),
-        operatorName: 'AdminA',
-        remark: 'Delete me',
-        rawLicense: 'TTK2.delete.signature',
-        status: LicenseRecordStatus.active,
-        exportedAt: null,
-        createdAt: now,
-        updatedAt: now,
-      ),
-    );
+  test(
+    'importExistingRecords deletes existing record when marker is D',
+    () async {
+      final DateTime now = DateTime.utc(2026, 4, 2, 12, 0);
+      await repository.insert(
+        LicenseRecordEntity(
+          licenseId: 'LIC-2026-0004',
+          bindName: '待删除',
+          bindUserCode: 'T020',
+          durationDays: 30,
+          permanent: false,
+          issuedAt: now,
+          activationDeadline: now.add(const Duration(days: 30)),
+          operatorName: 'AdminA',
+          remark: 'Delete me',
+          rawLicense: 'TTK3.delete.signature',
+          status: LicenseRecordStatus.active,
+          exportedAt: null,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
 
-    final File file = File(
-      '${tempDirectory.path}\\license_record_import_template_delete_record.xlsx',
-    );
-    final Excel workbook = Excel.createExcel();
-    workbook.rename('Sheet1', '授权记录');
-    final Sheet sheet = workbook['授权记录'];
-    sheet.appendRow(
-      LicenseImportService.existingRecordHeaders
-          .map(TextCellValue.new)
-          .toList(growable: false),
-    );
-    sheet.appendRow(<CellValue>[
-      TextCellValue('LIC-2026-0004'),
-      TextCellValue('待删除'),
-      TextCellValue('T020'),
-      TextCellValue('基础版'),
-      TextCellValue('30 天'),
-      TextCellValue(now.add(const Duration(days: 15)).toIso8601String()),
-      TextCellValue('有效'),
-      TextCellValue(now.toIso8601String()),
-      TextCellValue(now.toIso8601String()),
-      TextCellValue(now.toIso8601String()),
-      TextCellValue('AdminA'),
-      TextCellValue('Delete me'),
-      TextCellValue('TTK2.delete.signature'),
-      TextCellValue('D'),
-    ]);
-    await file.writeAsBytes(workbook.encode()!);
+      final File file = File(
+        '${tempDirectory.path}\\license_record_import_template_delete_record.xlsx',
+      );
+      final Excel workbook = Excel.createExcel();
+      workbook.rename('Sheet1', '授权记录');
+      final Sheet sheet = workbook['授权记录'];
+      sheet.appendRow(
+        LicenseImportService.existingRecordHeaders
+            .map(TextCellValue.new)
+            .toList(growable: false),
+      );
+      sheet.appendRow(<CellValue>[
+        TextCellValue('LIC-2026-0004'),
+        TextCellValue('待删除'),
+        TextCellValue('T020'),
+        TextCellValue('30 天'),
+        TextCellValue(now.add(const Duration(days: 15)).toIso8601String()),
+        TextCellValue('有效'),
+        TextCellValue(now.toIso8601String()),
+        TextCellValue(now.toIso8601String()),
+        TextCellValue(now.toIso8601String()),
+        TextCellValue('AdminA'),
+        TextCellValue('Delete me'),
+        TextCellValue('TTK3.delete.signature'),
+        TextCellValue('D'),
+      ]);
+      await file.writeAsBytes(workbook.encode()!);
 
-    final LicenseImportService importService = LicenseImportService(
-      repository: repository,
-      now: () => now,
-    );
+      final LicenseImportService importService = LicenseImportService(
+        repository: repository,
+        now: () => now,
+      );
 
-    final LicenseImportResult result = await importService.importExistingRecords(file);
-    expect(result.totalRows, 1);
-    expect(result.successCount, 1);
-    expect(result.failureCount, 0);
-    expect(await repository.findByLicenseId('LIC-2026-0004'), isNull);
-  });
+      final LicenseImportResult result = await importService
+          .importExistingRecords(file);
+      expect(result.totalRows, 1);
+      expect(result.successCount, 1);
+      expect(result.failureCount, 0);
+      expect(await repository.findByLicenseId('LIC-2026-0004'), isNull);
+    },
+  );
 
   test('importExistingRecords rejects files with extra columns', () async {
     final DateTime now = DateTime.utc(2026, 4, 2, 12, 0);
-    final File file = File('${tempDirectory.path}\\license_record_import_template_extra.xlsx');
+    final File file = File(
+      '${tempDirectory.path}\\license_record_import_template_extra.xlsx',
+    );
     final Excel workbook = Excel.createExcel();
     workbook.rename('Sheet1', '授权记录');
     final Sheet sheet = workbook['授权记录'];
@@ -249,7 +276,6 @@ void main() {
       TextCellValue('LIC-2026-0005'),
       TextCellValue('张老师'),
       TextCellValue('T001'),
-      TextCellValue('基础版'),
       TextCellValue('30 天'),
       TextCellValue(now.add(const Duration(days: 15)).toIso8601String()),
       TextCellValue('有效'),
@@ -258,7 +284,7 @@ void main() {
       TextCellValue(now.toIso8601String()),
       TextCellValue('AdminA'),
       TextCellValue('备注'),
-      TextCellValue('TTK2.payload.signature'),
+      TextCellValue('TTK3.payload.signature'),
       TextCellValue('I'),
       TextCellValue('extra'),
     ]);
@@ -286,8 +312,9 @@ void main() {
       ),
       now: () => now,
     );
-    final File file =
-        File('${tempDirectory.path}\\license_batch_generate_template_1001.xlsx');
+    final File file = File(
+      '${tempDirectory.path}\\license_batch_generate_template_1001.xlsx',
+    );
     final Excel workbook = Excel.createExcel();
     workbook.rename('Sheet1', '批量生码模板');
     final Sheet sheet = workbook['批量生码模板'];
@@ -300,7 +327,6 @@ void main() {
       sheet.appendRow(<CellValue>[
         TextCellValue('张老师$i'),
         TextCellValue('T$i'),
-        TextCellValue('基础版'),
         TextCellValue('30'),
         TextCellValue('否'),
         TextCellValue(now.add(const Duration(days: 25)).toIso8601String()),

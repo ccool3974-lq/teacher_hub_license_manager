@@ -6,7 +6,7 @@ class DbHelper {
   const DbHelper._();
 
   static const String databaseName = 'teacher_hub_license_manager.db';
-  static const int databaseVersion = 2;
+  static const int databaseVersion = 3;
 
   static Database? _database;
   static DatabaseFactory? _databaseFactoryOverride;
@@ -93,11 +93,10 @@ class DbHelper {
         licenseId TEXT NOT NULL,
         bindName TEXT NOT NULL,
         bindUserCode TEXT,
-        tier TEXT NOT NULL,
-        durationDays INTEGER,
+        durationDays INTEGER NOT NULL,
         permanent INTEGER NOT NULL,
         issuedAt TEXT NOT NULL,
-        activationDeadline TEXT,
+        activationDeadline TEXT NOT NULL,
         operatorName TEXT,
         remark TEXT,
         rawLicense TEXT NOT NULL,
@@ -119,6 +118,52 @@ class DbHelper {
       await db.execute(
         'ALTER TABLE license_records ADD COLUMN activationDeadline TEXT',
       );
+    }
+    if (oldVersion < 3 && newVersion >= 3) {
+      await db.execute(
+        'ALTER TABLE license_records RENAME TO license_records_old',
+      );
+      await _createTables(db);
+      await db.execute('''
+        INSERT INTO license_records (
+          id,
+          licenseId,
+          bindName,
+          bindUserCode,
+          durationDays,
+          permanent,
+          issuedAt,
+          activationDeadline,
+          operatorName,
+          remark,
+          rawLicense,
+          status,
+          exportedAt,
+          createdAt,
+          updatedAt
+        )
+        SELECT
+          id,
+          licenseId,
+          bindName,
+          bindUserCode,
+          CASE
+            WHEN permanent = 1 THEN 0
+            ELSE COALESCE(durationDays, 0)
+          END,
+          permanent,
+          issuedAt,
+          COALESCE(activationDeadline, datetime(issuedAt, '+30 days')),
+          operatorName,
+          remark,
+          rawLicense,
+          status,
+          exportedAt,
+          createdAt,
+          updatedAt
+        FROM license_records_old
+      ''');
+      await db.execute('DROP TABLE license_records_old');
     }
   }
 }
