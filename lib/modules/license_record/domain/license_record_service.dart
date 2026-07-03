@@ -50,6 +50,7 @@ class LicenseRecordService {
   final DateTime Function() _now;
 
   Future<LicenseRecordEntity> createLicenseRecord({
+    required String appVersion,
     required String bindName,
     String? bindUserCode,
     required int durationDays,
@@ -59,6 +60,7 @@ class LicenseRecordService {
     String? remark,
   }) async {
     final GeneratedLicense generated = await _generationService.generate(
+      appVersion: appVersion,
       bindName: bindName,
       bindUserCode: bindUserCode,
       durationDays: durationDays,
@@ -69,6 +71,7 @@ class LicenseRecordService {
     final DateTime currentTime = _now().toUtc();
     final LicenseRecordEntity entity = LicenseRecordEntity(
       licenseId: generated.licenseId,
+      appVersion: generated.payload.appVersion,
       bindName: bindName.trim(),
       bindUserCode: _trimToNull(bindUserCode),
       durationDays: permanent ? 0 : durationDays,

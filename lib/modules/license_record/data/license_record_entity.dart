@@ -19,6 +19,7 @@ class LicenseRecordEntity {
   const LicenseRecordEntity({
     this.id,
     required this.licenseId,
+    required this.appVersion,
     required this.bindName,
     this.bindUserCode,
     required this.durationDays,
@@ -36,6 +37,7 @@ class LicenseRecordEntity {
 
   final int? id;
   final String licenseId;
+  final String appVersion;
   final String bindName;
   final String? bindUserCode;
   final int durationDays;
@@ -53,6 +55,7 @@ class LicenseRecordEntity {
   LicenseRecordEntity copyWith({
     int? id,
     String? licenseId,
+    String? appVersion,
     String? bindName,
     String? bindUserCode,
     int? durationDays,
@@ -74,6 +77,7 @@ class LicenseRecordEntity {
     return LicenseRecordEntity(
       id: id ?? this.id,
       licenseId: licenseId ?? this.licenseId,
+      appVersion: appVersion ?? this.appVersion,
       bindName: bindName ?? this.bindName,
       bindUserCode: clearBindUserCode
           ? null
@@ -98,6 +102,7 @@ class LicenseRecordEntity {
     return <String, Object?>{
       'id': id,
       'licenseId': licenseId,
+      'appVersion': appVersion,
       'bindName': bindName,
       'bindUserCode': bindUserCode,
       'durationDays': durationDays,
@@ -118,6 +123,7 @@ class LicenseRecordEntity {
     return LicenseRecordEntity(
       id: map['id'] as int?,
       licenseId: map['licenseId'] as String,
+      appVersion: map['appVersion'] as String? ?? 'legacy',
       bindName: map['bindName'] as String,
       bindUserCode: map['bindUserCode'] as String?,
       durationDays: map['durationDays'] as int,

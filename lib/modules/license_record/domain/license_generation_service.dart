@@ -38,6 +38,7 @@ class LicenseGenerationService {
   final Random _random;
 
   Future<GeneratedLicense> generate({
+    required String appVersion,
     required String bindName,
     String? bindUserCode,
     required int durationDays,
@@ -45,8 +46,12 @@ class LicenseGenerationService {
     DateTime? activationDeadline,
     String? licenseId,
   }) async {
+    final String normalizedAppVersion = appVersion.trim();
     final String normalizedBindName = bindName.trim();
     final String? normalizedBindUserCode = _trimToNull(bindUserCode);
+    if (normalizedAppVersion.isEmpty) {
+      throw StateError('应用版本号不能为空。');
+    }
     if (normalizedBindName.isEmpty) {
       throw StateError('绑定用户姓名不能为空。');
     }
@@ -66,6 +71,7 @@ class LicenseGenerationService {
 
     final LicensePayload payload = LicensePayload(
       product: licenseProductName,
+      appVersion: normalizedAppVersion,
       licenseId: resolvedLicenseId,
       bindName: normalizedBindName,
       bindUserCode: normalizedBindUserCode,

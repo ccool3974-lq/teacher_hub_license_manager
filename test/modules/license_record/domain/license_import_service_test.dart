@@ -41,6 +41,7 @@ void main() {
     await repository.insert(
       LicenseRecordEntity(
         licenseId: 'LIC-2026-0003',
+        appVersion: '1.2.3',
         bindName: '旧名称',
         bindUserCode: 'T001',
         durationDays: 30,
@@ -70,6 +71,7 @@ void main() {
     );
     sheet.appendRow(<CellValue>[
       TextCellValue('LIC-2026-0003'),
+      TextCellValue('2.0.0'),
       TextCellValue('新名称'),
       TextCellValue('T009'),
       TextCellValue('永久'),
@@ -99,6 +101,7 @@ void main() {
     final List<LicenseRecordEntity> records = await repository.listAll();
     expect(records, hasLength(1));
     expect(records.first.bindName, '新名称');
+    expect(records.first.appVersion, '2.0.0');
     expect(records.first.durationDays, 0);
     expect(records.first.status, LicenseRecordStatus.replaced);
     expect(records.first.rawLicense, 'TTK3.new.signature');
@@ -163,6 +166,7 @@ void main() {
           .toList(growable: false),
     );
     sheet.appendRow(<CellValue>[
+      TextCellValue('1.2.3'),
       TextCellValue('张老师'),
       TextCellValue('T100'),
       TextCellValue('45'),
@@ -189,6 +193,7 @@ void main() {
     final List<LicenseRecordEntity> records = await repository.listAll();
     expect(records, hasLength(1));
     expect(records.first.bindName, '张老师');
+    expect(records.first.appVersion, '1.2.3');
     expect(records.first.durationDays, 45);
     expect(records.first.activationDeadline, now.add(const Duration(days: 25)));
     expect(records.first.rawLicense.startsWith('TTK3.'), isTrue);
@@ -201,6 +206,7 @@ void main() {
       await repository.insert(
         LicenseRecordEntity(
           licenseId: 'LIC-2026-0004',
+          appVersion: '1.2.3',
           bindName: '待删除',
           bindUserCode: 'T020',
           durationDays: 30,
@@ -230,6 +236,7 @@ void main() {
       );
       sheet.appendRow(<CellValue>[
         TextCellValue('LIC-2026-0004'),
+        TextCellValue('1.2.3'),
         TextCellValue('待删除'),
         TextCellValue('T020'),
         TextCellValue('30 天'),
@@ -274,6 +281,7 @@ void main() {
     sheet.appendRow(headers.map(TextCellValue.new).toList(growable: false));
     sheet.appendRow(<CellValue>[
       TextCellValue('LIC-2026-0005'),
+      TextCellValue('1.2.3'),
       TextCellValue('张老师'),
       TextCellValue('T001'),
       TextCellValue('30 天'),
@@ -325,6 +333,7 @@ void main() {
     );
     for (int i = 0; i < 1001; i++) {
       sheet.appendRow(<CellValue>[
+        TextCellValue('1.2.3'),
         TextCellValue('张老师$i'),
         TextCellValue('T$i'),
         TextCellValue('30'),

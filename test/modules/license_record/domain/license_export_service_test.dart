@@ -40,6 +40,7 @@ void main() {
     final LicenseRecordEntity record = await repository.insert(
       LicenseRecordEntity(
         licenseId: 'LIC-2026-0001',
+        appVersion: '1.2.3',
         bindName: 'Zhang',
         bindUserCode: 'T001',
         durationDays: 180,
@@ -70,6 +71,7 @@ void main() {
     expect(await textFile.exists(), isTrue);
     final String textContent = await textFile.readAsString();
     expect(textContent, contains('授权编号: LIC-2026-0001'));
+    expect(textContent, contains('应用版本号: 1.2.3'));
     expect(textContent, isNot(contains('授权版本')));
     expect(textContent, contains('创建时间:'));
     expect(textContent, contains('更新时间:'));
@@ -85,17 +87,19 @@ void main() {
     final Sheet sheet = workbook.tables['授权记录']!;
     expect(sheet.maxRows, greaterThanOrEqualTo(2));
     expect(sheet.row(0)[0]?.value.toString(), '授权编号');
-    expect(sheet.row(0)[3]?.value.toString(), '有效期');
-    expect(sheet.row(0)[4]?.value.toString(), '首次激活截止');
-    expect(sheet.row(0)[7]?.value.toString(), '创建时间');
-    expect(sheet.row(0)[8]?.value.toString(), '更新时间');
-    expect(sheet.row(0)[11]?.value.toString(), '授权码');
-    expect(sheet.row(0)[12]?.value.toString(), '操作标记');
+    expect(sheet.row(0)[1]?.value.toString(), '应用版本号');
+    expect(sheet.row(0)[4]?.value.toString(), '有效期');
+    expect(sheet.row(0)[5]?.value.toString(), '首次激活截止');
+    expect(sheet.row(0)[8]?.value.toString(), '创建时间');
+    expect(sheet.row(0)[9]?.value.toString(), '更新时间');
+    expect(sheet.row(0)[12]?.value.toString(), '授权码');
+    expect(sheet.row(0)[13]?.value.toString(), '操作标记');
     expect(
       sheet.row(0).map((Data? cell) => cell?.value.toString()).toList(),
       isNot(contains('授权版本')),
     );
-    expect(sheet.row(1)[12]?.value.toString(), 'I');
+    expect(sheet.row(1)[1]?.value.toString(), '1.2.3');
+    expect(sheet.row(1)[13]?.value.toString(), 'I');
 
     final LicenseRecordEntity? updated = await repository.findByLicenseId(
       'LIC-2026-0001',

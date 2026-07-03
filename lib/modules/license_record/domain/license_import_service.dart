@@ -31,6 +31,7 @@ class LicenseImportService {
 
   static const List<String> existingRecordHeaders = <String>[
     '授权编号',
+    '应用版本号',
     '绑定用户',
     '用户编号',
     '有效期',
@@ -45,6 +46,7 @@ class LicenseImportService {
     '操作标记',
   ];
   static const List<String> batchGenerateHeaders = <String>[
+    '应用版本号',
     '绑定用户',
     '用户编号',
     '有效期天数',
@@ -88,7 +90,7 @@ class LicenseImportService {
       try {
         final String licenseId = _requiredText(row, 0, '授权编号');
         final _ImportOperation operation = _parseOperation(
-          _requiredText(row, 12, '操作标记'),
+          _requiredText(row, 13, '操作标记'),
         );
         final LicenseRecordEntity? existing = await _repository.findByLicenseId(
           licenseId,
@@ -158,6 +160,7 @@ class LicenseImportService {
           throw StateError('批量生码导入当前仅支持操作标记 I');
         }
         await service.createLicenseRecord(
+          appVersion: input.appVersion,
           bindName: input.bindName,
           bindUserCode: input.bindUserCode,
           durationDays: input.durationDays,
@@ -237,41 +240,43 @@ class LicenseImportService {
 
   LicenseRecordEntity _parseExistingRecordRow(List<Data?> row) {
     final String licenseId = _requiredText(row, 0, '授权编号');
-    final String bindName = _requiredText(row, 1, '绑定用户');
+    final String appVersion = _requiredText(row, 1, '应用版本号');
+    final String bindName = _requiredText(row, 2, '绑定用户');
     final _DurationValue duration = _parseDuration(
-      _requiredText(row, 3, '有效期'),
+      _requiredText(row, 4, '有效期'),
     );
-    final DateTime issuedAt = _parseDate(_requiredText(row, 6, '发码时间'), '发码时间');
+    final DateTime issuedAt = _parseDate(_requiredText(row, 7, '发码时间'), '发码时间');
     final DateTime activationDeadline = _parseDate(
-      _requiredText(row, 4, '首次激活截止'),
+      _requiredText(row, 5, '首次激活截止'),
       '首次激活截止',
     );
     if (activationDeadline.isBefore(issuedAt)) {
       throw StateError('首次激活截止不能早于发码时间');
     }
     final LicenseRecordStatus status = _parseStatus(
-      _requiredText(row, 5, '状态'),
+      _requiredText(row, 6, '状态'),
     );
     final DateTime createdAt = _parseDate(
-      _requiredText(row, 7, '创建时间'),
+      _requiredText(row, 8, '创建时间'),
       '创建时间',
     );
     final DateTime updatedAt = _parseDate(
-      _requiredText(row, 8, '更新时间'),
+      _requiredText(row, 9, '更新时间'),
       '更新时间',
     );
-    final String rawLicense = _requiredText(row, 11, '授权码');
+    final String rawLicense = _requiredText(row, 12, '授权码');
 
     return LicenseRecordEntity(
       licenseId: licenseId,
+      appVersion: appVersion,
       bindName: bindName,
-      bindUserCode: _optionalText(row, 2),
+      bindUserCode: _optionalText(row, 3),
       durationDays: duration.permanent ? 0 : duration.days!,
       permanent: duration.permanent,
       issuedAt: issuedAt,
       activationDeadline: activationDeadline,
-      operatorName: _optionalText(row, 9),
-      remark: _optionalText(row, 10),
+      operatorName: _optionalText(row, 10),
+      remark: _optionalText(row, 11),
       rawLicense: rawLicense,
       status: status,
       exportedAt: null,
@@ -281,25 +286,27 @@ class LicenseImportService {
   }
 
   _BatchGenerateInput _parseBatchGenerateRow(List<Data?> row) {
-    final String bindName = _requiredText(row, 0, '绑定用户');
-    final bool permanent = _parseBool(_requiredText(row, 3, '永久授权'));
+    final String appVersion = _requiredText(row, 0, '应用版本号');
+    final String bindName = _requiredText(row, 1, '绑定用户');
+    final bool permanent = _parseBool(_requiredText(row, 4, '永久授权'));
     final int durationDays = permanent
         ? 0
-        : _parseInt(_requiredText(row, 2, '有效期天数'), '有效期天数');
+        : _parseInt(_requiredText(row, 3, '有效期天数'), '有效期天数');
     if (!permanent && durationDays <= 0) {
       throw StateError('有效期天数必须大于 0');
     }
-    final DateTime? activationDeadline = _optionalDate(row, 4, '首次激活截止日期');
+    final DateTime? activationDeadline = _optionalDate(row, 5, '首次激活截止日期');
 
     return _BatchGenerateInput(
+      appVersion: appVersion,
       bindName: bindName,
-      bindUserCode: _optionalText(row, 1),
+      bindUserCode: _optionalText(row, 2),
       durationDays: durationDays,
       permanent: permanent,
       activationDeadline: activationDeadline,
-      operatorName: _optionalText(row, 5),
-      remark: _optionalText(row, 6),
-      operation: _parseOperation(_requiredText(row, 7, '操作标记')),
+      operatorName: _optionalText(row, 6),
+      remark: _optionalText(row, 7),
+      operation: _parseOperation(_requiredText(row, 8, '操作标记')),
     );
   }
 
@@ -421,6 +428,7 @@ class _DurationValue {
 
 class _BatchGenerateInput {
   const _BatchGenerateInput({
+    required this.appVersion,
     required this.bindName,
     this.bindUserCode,
     required this.durationDays,
@@ -431,6 +439,7 @@ class _BatchGenerateInput {
     required this.operation,
   });
 
+  final String appVersion;
   final String bindName;
   final String? bindUserCode;
   final int durationDays;

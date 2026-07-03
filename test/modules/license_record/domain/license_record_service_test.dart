@@ -80,6 +80,7 @@ void main() {
       );
 
       final LicenseRecordEntity record = await service.createLicenseRecord(
+        appVersion: '1.2.3',
         bindName: 'Zhang',
         bindUserCode: 'T001',
         durationDays: 365,
@@ -91,6 +92,7 @@ void main() {
 
       expect(record.id, isNotNull);
       expect(record.bindName, 'Zhang');
+      expect(record.appVersion, '1.2.3');
       expect(record.bindUserCode, 'T001');
       expect(record.durationDays, 365);
       expect(record.status, LicenseRecordStatus.active);
@@ -116,6 +118,7 @@ void main() {
     await repository.insert(
       LicenseRecordEntity(
         licenseId: 'LIC-2026-0001',
+        appVersion: '1.2.3',
         bindName: '张老师',
         bindUserCode: 'T001',
         durationDays: 30,
@@ -134,6 +137,7 @@ void main() {
     await repository.insert(
       LicenseRecordEntity(
         licenseId: 'LIC-2026-0002',
+        appVersion: '1.2.3',
         bindName: '李老师',
         bindUserCode: 'T002',
         durationDays: 180,
@@ -152,6 +156,7 @@ void main() {
     await repository.insert(
       LicenseRecordEntity(
         licenseId: 'LIC-2026-0003',
+        appVersion: '1.2.3',
         bindName: '王老师',
         bindUserCode: 'T003',
         durationDays: 30,
@@ -170,6 +175,7 @@ void main() {
     await repository.insert(
       LicenseRecordEntity(
         licenseId: 'LIC-2026-0004',
+        appVersion: '1.2.3',
         bindName: '赵老师',
         bindUserCode: 'T004',
         durationDays: 0,

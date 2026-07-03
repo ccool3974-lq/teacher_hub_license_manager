@@ -52,6 +52,7 @@ class LicenseExportService {
 
     final List<String> headers = <String>[
       '授权编号',
+      '应用版本号',
       '绑定用户',
       '用户编号',
       '有效期',
@@ -70,6 +71,7 @@ class LicenseExportService {
     for (final LicenseRecordEntity record in records) {
       sheet.appendRow(<CellValue>[
         TextCellValue(record.licenseId),
+        TextCellValue(record.appVersion),
         TextCellValue(record.bindName),
         TextCellValue(record.bindUserCode ?? ''),
         TextCellValue(record.permanent ? '永久' : '${record.durationDays} 天'),
@@ -120,6 +122,7 @@ class LicenseExportService {
       LicenseImportService.batchGenerateHeaders.map(TextCellValue.new).toList(),
     );
     sheet.appendRow(<CellValue>[
+      TextCellValue('1.2.3'),
       TextCellValue('张老师'),
       TextCellValue('T001'),
       TextCellValue('30'),
@@ -155,6 +158,7 @@ class LicenseExportService {
     );
     sheet.appendRow(<CellValue>[
       TextCellValue('LIC-202604060001-ABCD'),
+      TextCellValue('1.2.3'),
       TextCellValue('张老师'),
       TextCellValue('T001'),
       TextCellValue('30 天'),
@@ -188,6 +192,7 @@ class LicenseExportService {
   String _buildRecordText(LicenseRecordEntity record) {
     final StringBuffer buffer = StringBuffer()
       ..writeln('授权编号: ${record.licenseId}')
+      ..writeln('应用版本号: ${record.appVersion}')
       ..writeln('绑定用户: ${record.bindName}')
       ..writeln('用户编号: ${record.bindUserCode ?? ''}')
       ..writeln('有效期: ${record.permanent ? '永久' : '${record.durationDays} 天'}')

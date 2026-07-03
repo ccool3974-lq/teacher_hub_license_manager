@@ -49,6 +49,7 @@ void main() {
     );
 
     final GeneratedLicense generated = await service.generate(
+      appVersion: '1.2.3',
       bindName: 'Zhang',
       bindUserCode: 'T001',
       durationDays: 180,
@@ -61,6 +62,7 @@ void main() {
     );
     expect(generated.rawLicense.startsWith('TTK3.'), isTrue);
     expect(generated.payload.bindName, 'Zhang');
+    expect(generated.payload.appVersion, '1.2.3');
     expect(generated.payload.bindUserCode, 'T001');
     expect(generated.payload.durationDays, 180);
     expect(generated.payload.permanent, isFalse);
@@ -76,6 +78,7 @@ void main() {
       segments[1],
     );
     expect(decoded.licenseId, generated.licenseId);
+    expect(decoded.appVersion, '1.2.3');
     expect(decoded.bindUserCode, 'T001');
     expect(decoded.toMap().containsKey('tier'), isFalse);
     expect(decoded.toMap().containsKey('features'), isFalse);
@@ -103,6 +106,7 @@ void main() {
 
     expect(
       () => service.generate(
+        appVersion: '1.2.3',
         bindName: 'Zhang',
         durationDays: 30,
         permanent: false,
@@ -123,6 +127,7 @@ void main() {
       );
 
       final GeneratedLicense generated = await service.generate(
+        appVersion: '1.2.3',
         bindName: 'Zhang',
         durationDays: 0,
         permanent: true,

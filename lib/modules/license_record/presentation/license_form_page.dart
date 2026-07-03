@@ -22,6 +22,7 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
       widget._service ?? LicenseRecordService();
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _appVersionController = TextEditingController();
   final TextEditingController _bindNameController = TextEditingController();
   final TextEditingController _bindUserCodeController = TextEditingController();
   final TextEditingController _operatorNameController = TextEditingController();
@@ -37,6 +38,7 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
 
   @override
   void dispose() {
+    _appVersionController.dispose();
     _bindNameController.dispose();
     _bindUserCodeController.dispose();
     _operatorNameController.dispose();
@@ -73,6 +75,21 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: <Widget>[
+            TextFormField(
+              controller: _appVersionController,
+              decoration: const InputDecoration(
+                labelText: '应用版本号',
+                hintText: '例如 1.2.3',
+                border: OutlineInputBorder(),
+              ),
+              validator: (String? value) {
+                if (value == null || value.trim().isEmpty) {
+                  return '请输入应用版本号';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _bindNameController,
               decoration: const InputDecoration(
@@ -245,6 +262,7 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
           ? 0
           : int.parse(_durationDaysController.text.trim());
       final LicenseRecordEntity record = await _service.createLicenseRecord(
+        appVersion: _appVersionController.text,
         bindName: _bindNameController.text,
         bindUserCode: _bindUserCodeController.text,
         durationDays: durationDays,
@@ -335,6 +353,7 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   _InfoLine(label: '授权编号', value: record.licenseId),
+                  _InfoLine(label: '应用版本号', value: record.appVersion),
                   _InfoLine(label: '绑定用户', value: record.bindName),
                   _InfoLine(
                     label: '有效期',
@@ -421,6 +440,7 @@ class _LicenseFormPageState extends State<LicenseFormPage> {
   }
 
   void _resetForm() {
+    _appVersionController.clear();
     _bindNameController.clear();
     _bindUserCodeController.clear();
     _operatorNameController.clear();

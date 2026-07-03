@@ -97,7 +97,7 @@ class _LicenseListPageState extends State<LicenseListPage>
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: '搜索绑定用户、授权编号、操作人',
+                hintText: '搜索绑定用户、授权编号、应用版本号、操作人',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _query.isEmpty
                     ? null
@@ -248,7 +248,7 @@ class _LicenseListPageState extends State<LicenseListPage>
                                         ),
                                         const SizedBox(height: 8),
                                         Text(
-                                          '离线密钥 · ${record.licenseId}',
+                                          '离线密钥 · ${record.licenseId} · ${record.appVersion}',
                                           style: Theme.of(
                                             context,
                                           ).textTheme.bodyLarge,
@@ -342,6 +342,7 @@ class _LicenseListPageState extends State<LicenseListPage>
           final String haystack = <String?>[
             record.bindName,
             record.licenseId,
+            record.appVersion,
             record.operatorName,
             record.bindUserCode,
           ].whereType<String>().join(' ').toLowerCase();

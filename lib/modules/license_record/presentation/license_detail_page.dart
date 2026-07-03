@@ -75,6 +75,7 @@ class _LicenseDetailPageState extends State<LicenseDetailPage>
                     title: '基本信息',
                     rows: <_InfoRow>[
                       _InfoRow('授权编号', record.licenseId),
+                      _InfoRow('应用版本号', record.appVersion),
                       _InfoRow('绑定用户', record.bindName),
                       _InfoRow('用户编号', record.bindUserCode ?? '未填写'),
                       _InfoRow(

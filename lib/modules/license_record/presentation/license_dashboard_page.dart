@@ -646,6 +646,8 @@ class _RecentRecordTile extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text('授权编号：${record.licenseId}'),
                   const SizedBox(height: 4),
+                  Text('应用版本号：${record.appVersion}'),
+                  const SizedBox(height: 4),
                   Text(
                     '首次激活截止：${ChineseDateTimeFormatter.formatDateTime(record.activationDeadline)}',
                   ),

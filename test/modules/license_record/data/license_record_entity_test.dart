@@ -7,6 +7,7 @@ void main() {
     final LicenseRecordEntity entity = LicenseRecordEntity(
       id: 1,
       licenseId: 'LIC-2026-0001',
+      appVersion: '1.2.3',
       bindName: 'Zhang',
       bindUserCode: 'T001',
       durationDays: 180,
@@ -27,6 +28,7 @@ void main() {
 
     expect(rebuilt.id, 1);
     expect(rebuilt.licenseId, 'LIC-2026-0001');
+    expect(rebuilt.appVersion, '1.2.3');
     expect(rebuilt.bindName, 'Zhang');
     expect(rebuilt.bindUserCode, 'T001');
     expect(rebuilt.durationDays, 180);

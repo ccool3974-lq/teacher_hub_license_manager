@@ -10,6 +10,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late Directory tempDirectory;
+  late String databasePath;
   late LicenseRecordRepository repository;
 
   setUp(() async {
@@ -17,9 +18,10 @@ void main() {
     tempDirectory = await Directory.systemTemp.createTemp(
       'teacher_hub_license_manager_test_',
     );
+    databasePath = '${tempDirectory.path}\\license_manager_test.db';
     await DbHelper.configureForTesting(
       databaseFactory: databaseFactoryFfi,
-      databasePath: '${tempDirectory.path}\\license_manager_test.db',
+      databasePath: databasePath,
     );
     repository = const LicenseRecordRepository();
   });
@@ -36,6 +38,7 @@ void main() {
     final LicenseRecordEntity inserted = await repository.insert(
       LicenseRecordEntity(
         licenseId: 'LIC-2026-0001',
+        appVersion: '1.2.3',
         bindName: 'Zhang',
         bindUserCode: 'T001',
         durationDays: 180,
@@ -64,6 +67,7 @@ void main() {
     final List<LicenseRecordEntity> records = await repository.listAll();
     expect(records, hasLength(1));
     expect(records.first.licenseId, 'LIC-2026-0001');
+    expect(records.first.appVersion, '1.2.3');
 
     final DateTime exportedAt = now.add(const Duration(minutes: 30));
     final int updatedRows = await repository.updateStatus(
@@ -91,6 +95,7 @@ void main() {
     await repository.insert(
       LicenseRecordEntity(
         licenseId: 'LIC-2026-0002',
+        appVersion: '1.2.3',
         bindName: 'Original',
         bindUserCode: 'T010',
         durationDays: 30,
@@ -111,6 +116,7 @@ void main() {
         .upsertByLicenseId(
           LicenseRecordEntity(
             licenseId: 'LIC-2026-0002',
+            appVersion: '2.0.0',
             bindName: 'Updated',
             bindUserCode: 'T011',
             durationDays: 0,
@@ -131,7 +137,63 @@ void main() {
     expect(records, hasLength(1));
     expect(updatedRecord.id, isNotNull);
     expect(records.first.bindName, 'Updated');
+    expect(records.first.appVersion, '2.0.0');
     expect(records.first.durationDays, 0);
     expect(records.first.status, LicenseRecordStatus.replaced);
+  });
+
+  test('database migration fills appVersion for version 3 records', () async {
+    final DateTime now = DateTime.utc(2026, 4, 2, 12, 0);
+    final Database oldDatabase = await databaseFactoryFfi.openDatabase(
+      databasePath,
+      options: OpenDatabaseOptions(
+        version: 3,
+        onCreate: (Database db, int version) async {
+          await db.execute('''
+            CREATE TABLE license_records (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              licenseId TEXT NOT NULL,
+              bindName TEXT NOT NULL,
+              bindUserCode TEXT,
+              durationDays INTEGER NOT NULL,
+              permanent INTEGER NOT NULL,
+              issuedAt TEXT NOT NULL,
+              activationDeadline TEXT NOT NULL,
+              operatorName TEXT,
+              remark TEXT,
+              rawLicense TEXT NOT NULL,
+              status TEXT NOT NULL,
+              exportedAt TEXT,
+              createdAt TEXT NOT NULL,
+              updatedAt TEXT NOT NULL,
+              UNIQUE (licenseId)
+            )
+          ''');
+        },
+      ),
+    );
+    await oldDatabase.insert('license_records', <String, Object?>{
+      'licenseId': 'LIC-2026-LEGACY',
+      'bindName': 'Legacy',
+      'bindUserCode': null,
+      'durationDays': 30,
+      'permanent': 0,
+      'issuedAt': now.toIso8601String(),
+      'activationDeadline': now.add(const Duration(days: 30)).toIso8601String(),
+      'operatorName': null,
+      'remark': null,
+      'rawLicense': 'TTK3.legacy.signature',
+      'status': LicenseRecordStatus.active.storageValue,
+      'exportedAt': null,
+      'createdAt': now.toIso8601String(),
+      'updatedAt': now.toIso8601String(),
+    });
+    await oldDatabase.close();
+
+    final List<LicenseRecordEntity> records = await repository.listAll();
+
+    expect(records, hasLength(1));
+    expect(records.first.licenseId, 'LIC-2026-LEGACY');
+    expect(records.first.appVersion, 'legacy');
   });
 }

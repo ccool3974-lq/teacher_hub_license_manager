@@ -6,7 +6,7 @@ class DbHelper {
   const DbHelper._();
 
   static const String databaseName = 'teacher_hub_license_manager.db';
-  static const int databaseVersion = 3;
+  static const int databaseVersion = 4;
 
   static Database? _database;
   static DatabaseFactory? _databaseFactoryOverride;
@@ -91,6 +91,7 @@ class DbHelper {
       CREATE TABLE license_records (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         licenseId TEXT NOT NULL,
+        appVersion TEXT NOT NULL,
         bindName TEXT NOT NULL,
         bindUserCode TEXT,
         durationDays INTEGER NOT NULL,
@@ -128,6 +129,7 @@ class DbHelper {
         INSERT INTO license_records (
           id,
           licenseId,
+          appVersion,
           bindName,
           bindUserCode,
           durationDays,
@@ -145,6 +147,7 @@ class DbHelper {
         SELECT
           id,
           licenseId,
+          'legacy',
           bindName,
           bindUserCode,
           CASE
@@ -164,6 +167,11 @@ class DbHelper {
         FROM license_records_old
       ''');
       await db.execute('DROP TABLE license_records_old');
+    }
+    if (oldVersion >= 3 && oldVersion < 4 && newVersion >= 4) {
+      await db.execute(
+        "ALTER TABLE license_records ADD COLUMN appVersion TEXT NOT NULL DEFAULT 'legacy'",
+      );
     }
   }
 }
